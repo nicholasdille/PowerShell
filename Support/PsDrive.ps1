@@ -107,3 +107,72 @@ function Move-DuplicateItem {
         Move-Item -Path $_.FullName -Destination $DuplicatePath
     }
 }
+
+function Get-FolderSize {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        [Alias('FullName')]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $Path
+    )
+
+    PROCESS {
+        foreach ($Item in $Path) {
+            Write-Verbose ('[{0}] Processing folder <{1}>' -f $MyInvocation.MyCommand, $Item)
+            $stats = Get-ChildItem -Path $Item -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Length | Measure-Object -Sum
+            [PSCustomObject]@{
+                Path  = $Item
+                Size  = $stats.Sum
+                Count = $stats.Count
+            }
+        }
+    }
+}
+
+function Get-Tree {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Path
+    )
+    
+    Get-Item -Path $Path | Select-Object -ExpandProperty FullName
+    Get-ChildItem -Path $Path -Recurse -Directory | Select-Object -ExpandProperty FullName
+}
+
+function Get-FileExtension {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    Get-ChildItem -Path $PAth -File -Recurse | Select -ExpandProperty Extension | Group-Object | Select-Object Name,Count | Sort-Object -Property Count -Descending
+}
+
+function Get-DuplicateItem {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+    )
+
+    $Files = Get-ChildItem -Path $Path -Recurse -File
+    $Duplicates = $Files | Group-Object -Property Length | Where-Object { $_.Count -gt 1 }
+
+    $Duplicates | ForEach-Object {
+        #Write-Host "Name: $($_.Name) | Count: $($_.Count)"
+
+        Foreach ($item in $_.Group) {
+            #Write-Host "    $($item.FullName)"
+            $item
+        }
+    }
+}
