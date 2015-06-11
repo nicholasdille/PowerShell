@@ -34,3 +34,7 @@ function Get-PSVersion {
 . (Join-Path -Path $PSScriptRoot -ChildPath 'PsDrive.ps1')
 . (Join-Path -Path $PSScriptRoot -ChildPath 'DefaultCredentials.ps1')
 . (Join-Path -Path $PSScriptRoot -ChildPath 'PSDefaultParameterValues.ps1')
+. (Join-Path -Path $PSScriptRoot -ChildPath 'File.ps1')
+. (Join-Path -Path $PSScriptRoot -ChildPath 'Hash.ps1')
+. (Join-Path -Path $PSScriptRoot -ChildPath 'Math.ps1')
+. (Join-Path -Path $PSScriptRoot -ChildPath 'Networking.ps1')
