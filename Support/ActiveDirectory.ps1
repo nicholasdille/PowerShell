@@ -347,3 +347,106 @@ function Wait-ADGroup {
         }
     }
 }
+
+function Add-Permission {
+    <# TODO
+    Permissions: ListDirectory, ReadData, WriteData 
+      CreateFiles, CreateDirectories, AppendData 
+      ReadExtendedAttributes, WriteExtendedAttributes, Traverse
+      ExecuteFile, DeleteSubdirectoriesAndFiles, ReadAttributes 
+      WriteAttributes, Write, Delete 
+      ReadPermissions, Read, ReadAndExecute 
+      Modify, ChangePermissions, TakeOwnership
+      Synchronize, FullControl
+    [System.Security.AccessControl.PropagationFlags]
+    Deny
+    Registry
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+        ,
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Group
+        ,
+        [Parameter(Mandatory=$true,ParameterSetName='Simple')]
+        [ValidateSet('Full', 'Read', 'Modify', 'List')]
+        [string]
+        $PermissionSetName
+        ,
+        [Parameter(Mandatory=$true,ParameterSetName='Custom')]
+        [System.Security.AccessControl.FileSystemRights[]]
+        $Permission
+        ,
+        [Parameter(Mandatory=$false,ParameterSetName='Simple')]
+        [switch]
+        $EnableInheritance
+        ,
+        [Parameter(Mandatory=$false,ParameterSetName='Custom')]
+        [System.Security.AccessControl.InheritanceFlags[]]
+        $Inheritance = 'None'
+    )
+
+    PROCESS {
+        Write-Verbose ('[{0}] Checking specified path <{1}>' -f $MyInvocation.MyCommand, $Path)
+        if (-Not (Test-Path -Path $Path)) {
+            throw ('[{0}] The specified path <{1}> does not exist' -f $MyInvocation.MyCommand, $Path)
+        }
+
+        Write-Verbose ('[{0}] Processing parameters' -f $MyInvocation.MyCommand)
+        if ($PSCmdlet.ParameterSetName -ieq 'Simple') {
+            Write-Verbose ('[{0}] Translating simple parameters to internal names' -f $MyInvocation.MyCommand)
+
+	        switch ($PermissionSetName) {
+		        full   { $Permission = 'FullControl' }
+		        read   { $Permission = 'ReadAndExecute' }
+		        modify { $Permission = 'Modify' }
+		        list   { $Permission = ('ReadData', 'AppendData') }
+	        }
+            Write-Verbose ('[{0}] Converted permission <{1}> to internal set <{2}>' -f $MyInvocation.MyCommand, $PermissionSetName, ($Permission -join ','))
+
+	        if ($EnableInheritance) {
+		        $Inheritance = ('ContainerInherit', 'ObjectInherit')
+	        }
+            Write-Verbose ('[{0}] Using the following inheritance setting <{1}>' -f $MyInvocation.MyCommand, ($Inheritance -join ';'))
+        }
+        $Permission  = $Permission -join ','
+        $Inheritance = $Inheritance -join ','
+    
+        try {
+            Write-Verbose ('[{0}] Creating new ACE rule for group <{1}>' -f $MyInvocation.MyCommand, $Group)
+	        $Ace = New-Object System.Security.AccessControl.FileSystemAccessRule($Group, $Permission, $Inheritance, 'None', 'Allow')
+
+            Write-Verbose ('[{0}] Reading existing ACLs for path <{1}>' -f $MyInvocation.MyCommand, $Path)
+	        $Acl = Get-Acl -Path $Path
+
+            if ($Acl.Access | Where-Object { $_.IdentityReference -ieq $Group }) {
+                Write-Verbose ('[{0}] Modifying existing permission rule' -f $MyInvocation.MyCommand)
+			    $Modification = New-Object System.Security.AccessControl.AccessControlModification
+			    $Modification.value__ = 2
+			    $Modified = $false
+                $Acl.ModifyAccessRule($Modification, $Ace, [ref]$Modified) | Out-Null
+
+            } else {
+                Write-Verbose ('[{0}] Adding rule to existing permissions' -f $MyInvocation.MyCommand)
+                $Acl.AddAccessRule($Ace)
+            }
+
+            Write-Verbose ('[{0}] Writing ACL to original path' -f $MyInvocation.MyCommand)
+	        Set-Acl -Path $Path -AclObject $Acl
+
+        } catch {
+            Write-Verbose ('[{0}] Failed to modify permissions' -f $MyInvocation.MyCommand)
+            return $false
+        }
+
+	    Write-Verbose ('[{0}] Done' -f $MyInvocation.MyCommand)
+        return $true
+    }
+}
