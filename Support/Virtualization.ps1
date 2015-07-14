@@ -20,11 +20,11 @@ function Get-VmIdFromHyperV {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]$ComputerName
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Name
     )
@@ -55,11 +55,11 @@ function Get-VmIdFromVmm {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]$VMMServer
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Name
     )
@@ -90,17 +90,17 @@ function Get-VmIp {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $VmName
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $IPv4Pattern = '^\d+\.\d+\.\d+\.\d+$'

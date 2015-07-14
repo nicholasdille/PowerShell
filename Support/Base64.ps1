@@ -98,7 +98,7 @@ function ConvertTo-UnattendXmlPassword {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Mandatory,ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Password
@@ -124,7 +124,7 @@ function ConvertFrom-UnattendXmlPassword {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Mandatory,ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Password

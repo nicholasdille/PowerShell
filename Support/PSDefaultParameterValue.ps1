@@ -10,13 +10,13 @@
 function Get-DefaultParameterValue {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [Alias('Name')]
         [ValidateNotNullOrEmpty()]
         [string]
         $CmdletName
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [Alias('Parameter')]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -31,19 +31,19 @@ function Get-DefaultParameterValue {
 function Set-DefaultParameterValue {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [Alias('Name')]
         [ValidateNotNullOrEmpty()]
         [string]
         $CmdletName
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [Alias('Parameter')]
         [ValidateNotNullOrEmpty()]
         [string]
         $ParameterName
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [Alias('Value')]
         $ParameterValue
     )
@@ -56,13 +56,13 @@ function Set-DefaultParameterValue {
 function Remove-DefaultParameterValue {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [Alias('Name')]
         [ValidateNotNullOrEmpty()]
         [string]
         $CmdletName
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [Alias('Parameter')]
         [ValidateNotNullOrEmpty()]
         [string]

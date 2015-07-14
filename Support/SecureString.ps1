@@ -18,12 +18,12 @@
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Mandatory,ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [Security.SecureString]
         $SecureString
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Key
@@ -52,12 +52,12 @@ function ConvertFrom-EncryptedString {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Mandatory,ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]
         $EncryptedString
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Key
@@ -81,7 +81,7 @@ function Get-PlaintextFromSecureString {
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Mandatory,ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [Security.SecureString]
         $SecureString

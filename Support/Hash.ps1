@@ -2,12 +2,12 @@
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [System.Object[]]
         $Keys
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [System.Object[]]
         $Values
@@ -24,12 +24,12 @@ function ConvertTo-Hash {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Mandatory,ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Array
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory)]
         $Value = $null
     )
 

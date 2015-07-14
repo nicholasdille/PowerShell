@@ -18,17 +18,17 @@
     [CmdletBinding()]
     [OutputType([string])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $FilePath
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName = $env:COMPUTERNAME
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $DomainName = $env:USERDNSDOMAIN
@@ -72,32 +72,32 @@ function Copy-VMFileRemotely {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,ParameterSetName='Computer')]
+        [Parameter(Mandatory,ParameterSetName='Computer')]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName
         ,
-        [Parameter(Mandatory=$false,ParameterSetName='Computer')]
+        [Parameter(ParameterSetName='Computer')]
         [ValidateNotNullOrEmpty()]
         [string]
         $CredentialName
         ,
-        [Parameter(Mandatory=$true,ParameterSetName='PsSession')]
+        [Parameter(Mandatory,ParameterSetName='PsSession')]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.Runspaces.PSSession]
         $Session
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $VmName
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Files
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $DestinationPath
@@ -151,17 +151,17 @@ function New-PsRemoteSession {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.Runspaces.PSSession])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $CredentialName
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [switch]
         $UseCredSsp
     )
@@ -220,21 +220,21 @@ function Enter-PsRemoteSession {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,ParameterSetName='Computer')]
+        [Parameter(Mandatory,ParameterSetName='Computer')]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName
         ,
-        [Parameter(Mandatory=$false,ParameterSetName='Computer')]
+        [Parameter(ParameterSetName='Computer')]
         [ValidateNotNullOrEmpty()]
         [string]
         $CredentialName
         ,
-        [Parameter(Mandatory=$false,ParameterSetName='Computer')]
+        [Parameter(ParameterSetName='Computer')]
         [switch]
         $UseCredSsp
         ,
-        [Parameter(Mandatory=$true,ParameterSetName='PsSession')]
+        [Parameter(Mandatory,ParameterSetName='PsSession')]
         [ValidateNotNullOrEmpty()]
         [System.Management.Automation.Runspaces.PSSession]
         $Session
@@ -272,12 +272,12 @@ function New-SimpleCimSession {
     [CmdletBinding()]
     [OutputType([Microsoft.Management.Infrastructure.CimSession])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $CredentialName
@@ -320,22 +320,22 @@ function Copy-ToRemoteItem {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $SourcePath
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $DestinationPath
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [pscredential]
         $Credential
@@ -373,22 +373,22 @@ function Copy-FromRemoteItem {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $SourcePath
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $DestinationPath
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [pscredential]
         $Credential

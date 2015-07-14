@@ -2,7 +2,7 @@
     [CmdletBinding()]
     [OutputType([String])]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Mandatory,ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $ComputerName

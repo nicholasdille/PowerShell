@@ -99,6 +99,7 @@ function Test-Group {
 
 function New-Group {
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
@@ -152,9 +153,11 @@ function New-Group {
 
         if (Test-Group @TestParams) {
             Write-Verbose ('[{0}] Group already exists. Done.' -f $MyInvocation.MyCommand)
-            return
+            return $true
         }
 
+        Write-Verbose ('[{0}] Creating NEW group' -f $MyInvocation.MyCommand)
+        $GroupCreated = $false
         $CreateParams = @{
             Name           = $Identity
             SamAccountName = $Identity
@@ -167,12 +170,15 @@ function New-Group {
             Credential     = $Credential
         }
         try {
+            Write-Verbose ('[{0}] Inside try/catch' -f $MyInvocation.MyCommand)
             New-ADGroup @CreateParams
             Write-Verbose ('[{0}] Group <{1}> was successfully created' -f $MyInvocation.MyCommand, $Identity)
+            $GroupCreated = $true
 
         } catch {
             Write-Error ('[{0}] Failed to create group <{1}>' -f $MyInvocation.MyCommand, $Identity)
-            return
+            $GroupCreated = $false
+            return $GroupCreated
         }
 
         if ($Wait) {
@@ -180,12 +186,13 @@ function New-Group {
         }
 
         Write-Verbose ('[{0}] Done' -f $MyInvocation.MyCommand)
+        return $GroupCreated
     }
 }
 
 function New-Member {
     [CmdletBinding()]
-    [OutputType([System.Array])]
+    [OutputType([bool])]
     param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNullOrEmpty()]
@@ -211,14 +218,31 @@ function New-Member {
         $WhatIf
     )
 
+
+    Write-Verbose ('[{0}] Testing for existence of group <{1}>' -f $MyInvocation.MyCommand, $MemberOf)
+    $TestParams = @{
+        Identity = $MemberOf
+    }
+    if ($Server)     { $TestParams.Add('Server',     $Server) }
+    if ($Credential) { $TestParams.Add('Credential', $Credential) }
+    if (-Not (Test-Group @TestParams)) {
+        Write-Error ('[{0}] Group <{1}> does not exist. Aborting.' -f $MyInvocation.MyCommand, $MemberOf)
+        return $false
+    }
+
     Write-Verbose ('[{0}] Adding member <{1}> to group <{2}>' -f $MyInvocation.MyCommand, $Identity, $MemberOf)
+    $MembershipAdded = $false
     try {
         Add-ADPrincipalGroupMembership @PSBoundParameters
+        $MembershipAdded = $true
 
     } catch {
         Write-Error ('[{0}] Failed to set membership of <{1}> in group <{2}>' -f $MyInvocation.MyCommand, $params.Identity, $params.MemberOf)
+        $MembershipAdded = $false
     }
+
     Write-Verbose ('[{0}] Done' -f $MyInvocation.MyCommand)
+    return $MembershipAdded
 }
 
 function Rename-ADGroup {
@@ -263,6 +287,18 @@ function Rename-ADGroup {
         }
         if ($Credential) {
             $param.Add('Credential', $Credential)
+        }
+
+        Write-Verbose ('[{0}] Testing for existence of group <{1}>' -f $MyInvocation.MyCommand, $Identity)
+        if (-not (Test-Group -Identity $Identity @param)) {
+            Write-Error ('[{0}] Group <{1}> not found. Aborting.' -f $MyInvocation.MyCommand, $Identity)
+            return $false
+        }
+
+        Write-Verbose ('[{0}] Testing for missing group <{1}>' -f $MyInvocation.MyCommand, $NewName)
+        if (Test-Group -Identity $NewName @param) {
+            Write-Error ('[{0}] Group <{1}> found. Aborting.' -f $MyInvocation.MyCommand, $NewName)
+            return $false
         }
 
         try {

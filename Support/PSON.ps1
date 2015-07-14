@@ -18,7 +18,7 @@ function ConvertFrom-Pson {
     [CmdletBinding()]
     [OutputType([System.Object])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path
@@ -37,7 +37,7 @@ function ConvertFrom-Pson {
         return $data
     }
 
-    Write-Error ('[{0}] Input file does not exist. Aborting.' -f $MyInvocation.MyCommand)
+    throw ('[{0}] Input file does not exist. Aborting.' -f $MyInvocation.MyCommand)
 
     return
 }
