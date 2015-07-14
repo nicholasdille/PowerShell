@@ -2,7 +2,7 @@
     [CmdletBinding()]
     [OutputType([System.Array])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $File
