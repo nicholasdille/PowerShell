@@ -38,3 +38,4 @@ function Get-PSVersion {
 . (Join-Path -Path $PSScriptRoot -ChildPath 'Hash.ps1')
 . (Join-Path -Path $PSScriptRoot -ChildPath 'Math.ps1')
 . (Join-Path -Path $PSScriptRoot -ChildPath 'Networking.ps1')
+. (Join-Path -Path $PSScriptRoot -ChildPath 'Jobs.ps1')
