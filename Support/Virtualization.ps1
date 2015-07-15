@@ -1,6 +1,6 @@
 ﻿Set-StrictMode -Version Latest
 
-##Requires -Modules HyperV
+#Requires -Modules HyperV
 
 function Get-VmIdFromHyperV {
     <#
