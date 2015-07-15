@@ -5,7 +5,7 @@ $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 Describe 'Credential Store' {
     Context 'New-CredentialInStore' {
         It 'Check creation of new credential' {
-            New-Item -Path 'TestDrive:\Cred' -ItemType File | Out-Null
+            New-Item -Path 'TestDrive:\Cred' -ItemType Directory | Out-Null
             $Password   = ConvertTo-SecureString 'P@ssw0rd!' -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('domain\user', $Password)
             New-CredentialInStore -CredentialName 'user@domain' -Credential $Credential -CredentialStore 'TestDrive:\Cred'
@@ -14,7 +14,7 @@ Describe 'Credential Store' {
     }
     Context 'Get-CredentialFromStore' {
         It 'Retrieve credential from store' {
-            New-Item -Path 'TestDrive:\Cred' -ItemType File
+            New-Item -Path 'TestDrive:\Cred' -ItemType Directory
             $Password   = ConvertTo-SecureString 'P@ssw0rd!' -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('domain\user', $Password)
             New-CredentialInStore -CredentialName 'user@domain' -Credential $Credential -CredentialStore 'TestDrive:\Cred'
@@ -24,9 +24,25 @@ Describe 'Credential Store' {
         }
     }
     Context 'New-PsRemoteSession' {
+        It 'Creates a new remote session' {
+            Mock New-PSSession {return $null}
+            { New-PsRemoteSession -ComputerName someserver } | Should Throw
+            Assert-MockCalled New-PSSession -Exactly -Times 1
+        }
     }
     Context 'Enter-PsRemoteSession' {
+        It 'Enters a remote session' {
+            Mock New-PsRemoteSession {}
+            Mock Enter-PSSession {}
+            Enter-PsRemoteSession -ComputerName someserver
+            Assert-MockCalled Enter-PSSession -Exactly -Times 1
+        }
     }
     Context 'New-SimpleCimSession' {
+        It 'Creates a new remote session' {
+            Mock New-CimSession {return $null}
+            { New-SimpleCimSession -ComputerName someserver } | Should Throw
+            Assert-MockCalled New-CimSession -Exactly -Times 1
+        }
     }
 }

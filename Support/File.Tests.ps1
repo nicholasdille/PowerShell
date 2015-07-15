@@ -3,15 +3,21 @@ $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 . "$here\$sut"
 
 Describe 'BinaryFile/FileHash' {
+    Context 'New-File' {
+        $Path = Get-Item -Path TestDrive:\ | Select-Object -ExpandProperty FullName
+        $file = New-File -BasePath $Path -FileCount 1 -ChunkCount 10 -ChunkSize (100KB)
 
-    $TempPath = [System.IO.Path]::GetTempPath()
-    $FileName = [System.IO.Path]::GetRandomFileName()
-    $TempFilePath = "$TempPath$FileName"
-    fsutil.exe file createnew $TempFilePath (1000KB)
-
-    It 'Split binary file' {
-        (Split-BinaryFile -Path $TempFilePath -Size 100KB).Count | Should Be 10
+        It 'Creates a file with correct size' {
+            @($file).Count | Should Be 1
+            Get-Item -Path $file | Select-Object -ExpandProperty Length | Should Be (1000KB)
+        }
     }
-
-    Get-ChildItem -Path $TempPath -File -Filter "$FileName.*" | Remove-Item -WhatIf
+    Context 'Split-BinaryFile' {
+        $Path = Get-Item -Path TestDrive:\ | Select-Object -ExpandProperty FullName
+        $file = New-File -BasePath $Path -FileCount 1 -ChunkCount 10 -ChunkSize (100KB)
+            
+        It 'Creates the correct number of chunks' {
+            (Split-BinaryFile -Path $file -Size 100KB).Count | Should Be 10
+        }
+    }
 }

@@ -29,7 +29,7 @@ Describe 'PSDefaultParameterValues' {
         Backup-DefaultParameterValues
         Set-DefaultParameterValue -CmdletName 'Invoke-Command' -ParameterName 'ComputerName' -ParameterValue 'localhost'
         Remove-DefaultParameterValue -CmdletName 'Invoke-Command' -ParameterName 'ComputerName'
-        Get-DefaultParameterValue -CmdletName 'Invoke-Command' -ParameterName 'ComputerName' | Should Be $null
+        { Get-DefaultParameterValue -CmdletName 'Invoke-Command' -ParameterName 'ComputerName' } | Should Throw
         Restore-DefaultParameterValues
     }
 }
