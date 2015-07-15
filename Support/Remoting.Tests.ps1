@@ -11,4 +11,6 @@ Describe 'Remoting' {
     }
     Context 'Copy-FromRemoteItem' {
     }
+    Context 'Import-RemoteModule' {
+    }
 }
