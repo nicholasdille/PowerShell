@@ -99,7 +99,7 @@ function Test-Group {
 }
 
 function New-Group {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess,ConfirmImpact='Low')]
     [OutputType([bool])]
     param(
         [Parameter(Mandatory)]
@@ -139,6 +139,9 @@ function New-Group {
         ,
         [switch]
         $Wait
+        ,
+        [switch]
+        $Force
     )
 
     PROCESS {
@@ -159,31 +162,33 @@ function New-Group {
 
         Write-Verbose -Message ('[{0}] Creating NEW group' -f $MyInvocation.MyCommand)
         $GroupCreated = $false
-        $CreateParams = @{
-            Name           = $Identity
-            SamAccountName = $Identity
-            GroupCategory  = $Category
-            GroupScope     = $Scope
-            DisplayName    = $Identity
-            Path           = $Path
-            Description    = $Description
-            Server         = $Server
-            Credential     = $Credential
-        }
-        try {
-            Write-Verbose -Message ('[{0}] Inside try/catch' -f $MyInvocation.MyCommand)
-            New-ADGroup @CreateParams
-            Write-Verbose -Message ('[{0}] Group <{1}> was successfully created' -f $MyInvocation.MyCommand, $Identity)
-            $GroupCreated = $true
+        if ($Force -or $PSCmdlet.ShouldProcess($Identity, 'Create Active Directory group')) {
+            $CreateParams = @{
+                Name           = $Identity
+                SamAccountName = $Identity
+                GroupCategory  = $Category
+                GroupScope     = $Scope
+                DisplayName    = $Identity
+                Path           = $Path
+                Description    = $Description
+                Server         = $Server
+                Credential     = $Credential
+            }
+            try {
+                Write-Debug -Message ('[{0}] Inside try/catch' -f $MyInvocation.MyCommand)
+                New-ADGroup @CreateParams -Confirm:$false -Force:$Force
+                Write-Verbose -Message ('[{0}] Group <{1}> was successfully created' -f $MyInvocation.MyCommand, $Identity)
+                $GroupCreated = $true
 
-        } catch {
-            Write-Error -Message ('[{0}] Failed to create group <{1}>' -f $MyInvocation.MyCommand, $Identity)
-            $GroupCreated = $false
-            return $GroupCreated
-        }
+            } catch {
+                Write-Error -Message ('[{0}] Failed to create group <{1}>' -f $MyInvocation.MyCommand, $Identity)
+                $GroupCreated = $false
+                return $GroupCreated
+            }
 
-        if ($Wait) {
-            Wait-ADGroup @TestParams -Verbose
+            if ($Wait) {
+                Wait-ADGroup @TestParams -Verbose
+            }
         }
 
         Write-Verbose -Message ('[{0}] Done' -f $MyInvocation.MyCommand)
