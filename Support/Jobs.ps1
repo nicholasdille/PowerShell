@@ -33,12 +33,12 @@
         $Jobs = @()
         $InputIndex = 0
 
-        Write-Verbose -Message ('[{0}] Processing {1} objects' -f $MyInvocation.MyCommand, $InputObject.Count)
+        Write-Verbose -Message ('[{0}] Processing {1} objects' -f $MyInvocation.MyCommand, @($InputObject).Count)
     }
 
     Process {
-        while ($InputIndex -lt $InputObject.Count) {
-            Write-Debug -Message ('[{0}] InputIndex={1} JobCount={2} RunningJobCount={3}' -f $MyInvocation.MyCommand, $InputIndex, $Jobs.Count, ($Jobs | Get-Job | Where-Object {$_.State -ieq 'Running'}).Count)
+        while ($InputIndex -lt @($InputObject).Count) {
+            Write-Debug -Message ('[{0}] InputIndex={1} JobCount={2} RunningJobCount={3}' -f $MyInvocation.MyCommand, $InputIndex, @($Jobs).Count, @($Jobs | Get-Job | Where-Object {$_.State -ieq 'Running'}).Count)
 
             if ($Jobs.Count -lt $ThrottleLimit -or ($Jobs | Get-Job | Where-Object {$_.State -ieq 'Running'}).Count -lt $ThrottleLimit) {
                 Write-Verbose -Message ('[{0}] New job for parameter index {1}' -f $MyInvocation.MyCommand, $InputIndex)
