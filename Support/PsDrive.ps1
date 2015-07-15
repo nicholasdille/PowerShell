@@ -42,14 +42,14 @@
             $DestinationFiles.Add($_.Name, $_)
 
         } else {
-            Write-Warning ('[{0}] Destination item <{1}> may be a duplicate for <{2}>. Ignoring.' -f $MyInvocation.MyCommand, $_.FullName, $DestinationFiles[$_.Name].FullName)
+            Write-Warning -Message ('[{0}] Destination item <{1}> may be a duplicate for <{2}>. Ignoring.' -f $MyInvocation.MyCommand, $_.FullName, $DestinationFiles[$_.Name].FullName)
         }
     }
-    Write-Verbose ('[{0}] Read {1} items from destination path <{2}>' -f $MyInvocation.MyCommand, $DestinationFiles.Count, $Path)
+    Write-Verbose -Message ('[{0}] Read {1} items from destination path <{2}>' -f $MyInvocation.MyCommand, $DestinationFiles.Count, $Path)
 
     Get-ChildItem -Path $Path | ForEach-Object {
         if (-Not $DestinationFiles.ContainsKey($_.Name)) {
-            Write-Verbose ('[{0}] New item <{1}> found' -f $MyInvocation.MyCommand, $_.Name)
+            Write-Verbose -Message ('[{0}] New item <{1}> found' -f $MyInvocation.MyCommand, $_.Name)
 
         } else {
             $_
@@ -96,7 +96,7 @@ function Move-DuplicateItem {
     )
 
     if (-Not (Test-Path -Path $DuplicatePath)) {
-        Write-Verbose ('[{0}] Path for duplicate items <{1}> does not exist. Appending to source path.' -f $MyInvocation.MyCommand, $DuplicatePath)
+        Write-Verbose -Message ('[{0}] Path for duplicate items <{1}> does not exist. Appending to source path.' -f $MyInvocation.MyCommand, $DuplicatePath)
         $DuplicatePath = Join-Path -Path $Path -ChildPath $DuplicatePath
     }
     if (-Not (Test-Path -Path $DuplicatePath)) {
@@ -120,7 +120,7 @@ function Get-FolderSize {
 
     PROCESS {
         foreach ($Item in $Path) {
-            Write-Verbose ('[{0}] Processing folder <{1}>' -f $MyInvocation.MyCommand, $Item)
+            Write-Verbose -Message ('[{0}] Processing folder <{1}>' -f $MyInvocation.MyCommand, $Item)
             $stats = Get-ChildItem -Path $Item -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Length | Measure-Object -Sum
             [PSCustomObject]@{
                 Path  = $Item
@@ -164,7 +164,7 @@ function Get-FileExtension {
         throw ('[{0}] Specified path ({1}) does not exist. Aborting.' -f $MyInvocation.MyCommand, $Path)
     }
 
-    Get-ChildItem -Path $Path -File -Recurse | Select -ExpandProperty Extension | Group-Object | Select-Object Name,Count | Sort-Object -Property Count -Descending
+    Get-ChildItem -Path $Path -File -Recurse | Select-Object -ExpandProperty Extension | Group-Object | Select-Object Name,Count | Sort-Object -Property Count -Descending
 }
 
 function Get-DuplicateItem {
@@ -180,10 +180,10 @@ function Get-DuplicateItem {
     $Duplicates = $Files | Group-Object -Property Length | Where-Object { $_.Count -gt 1 }
 
     $Duplicates | ForEach-Object {
-        #Write-Host "Name: $($_.Name) | Count: $($_.Count)"
+        #Write-Host -Message "Name: $($_.Name) | Count: $($_.Count)"
 
         Foreach ($item in $_.Group) {
-            #Write-Host "    $($item.FullName)"
+            #Write-Host -Message "    $($item.FullName)"
             $item
         }
     }

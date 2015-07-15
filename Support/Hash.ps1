@@ -39,7 +39,7 @@ function ConvertTo-Hash {
 
     PROCESS {
         foreach ($item in $Array) {
-            if ($item -ne $null -And $item -ne '') {
+            if ($item) {
                 $hash[$item] = $Value;
             }
         }

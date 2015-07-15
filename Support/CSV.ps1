@@ -1,6 +1,6 @@
 ﻿function Import-Array {
     [CmdletBinding()]
-    [OutputType([System.Array])]
+    [OutputType([array])]
     param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -8,30 +8,30 @@
         $File
     )
 
-    Write-Verbose ('[{0}] Sourcing from first existing input file' -f $MyInvocation.MyCommand)
+    Write-Verbose -Message ('[{0}] Sourcing from first existing input file' -f $MyInvocation.MyCommand)
 
     # check for input files in the following order
     foreach ($InputFile in $File) {
-        Write-Verbose ('[{0}] Checking for input file <{1}>' -f $MyInvocation.MyCommand, $InputFile)
+        Write-Verbose -Message ('[{0}] Checking for input file <{1}>' -f $MyInvocation.MyCommand, $InputFile)
 
         # check if file exists
         if (Test-Path -Path $InputFile) {
             # jump out of loop because file exists
-            Write-Verbose ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
+            Write-Verbose -Message ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
             break
         }
 
         # expand path to input file
         $InputFile = Join-Path -Path $PSScriptRoot -ChildPath $InputFile
-        Write-Verbose ('[{0}] Full path to input file is <{1}>' -f $MyInvocation.MyCommand, $InputFile)
+        Write-Verbose -Message ('[{0}] Full path to input file is <{1}>' -f $MyInvocation.MyCommand, $InputFile)
 
         # check if file exists
         if (Test-Path -Path $InputFile) {
             # jump out of loop because file exists
-            Write-Verbose ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
+            Write-Verbose -Message ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
             break
         }
-        Write-Verbose ('[{0}] File <{1}> not found.' -f $MyInvocation.MyCommand, $InputFile)
+        Write-Verbose -Message ('[{0}] File <{1}> not found.' -f $MyInvocation.MyCommand, $InputFile)
     }
 
     # make sure an input file was found
@@ -41,7 +41,7 @@
 
     # read group memberships from file
     $Lines = @(Get-Content -Path $InputFile)
-    Write-Verbose ('[{0}] Read {1} lines from input file <{2}>.' -f $MyInvocation.MyCommand, $Lines.Count, $InputFile)
+    Write-Verbose -Message ('[{0}] Read {1} lines from input file <{2}>.' -f $MyInvocation.MyCommand, $Lines.Count, $InputFile)
 
     return $Lines
 }
@@ -66,30 +66,30 @@ function Import-Hash {
         $Header
     )
 
-    Write-Verbose ('[{0}] Sourcing hash from first existing input file' -f $MyInvocation.MyCommand)
+    Write-Verbose -Message ('[{0}] Sourcing hash from first existing input file' -f $MyInvocation.MyCommand)
 
     # check for input files in the following order
     foreach ($InputFile in $File) {
-        Write-Verbose ('[{0}] Checking for input file <{1}>' -f $MyInvocation.MyCommand, $InputFile)
+        Write-Verbose -Message ('[{0}] Checking for input file <{1}>' -f $MyInvocation.MyCommand, $InputFile)
 
         # check if file exists
         if (Test-Path -Path $InputFile) {
             # jump out of loop because file exists
-            Write-Verbose ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
+            Write-Verbose -Message ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
             break
         }
 
         # expand path to input file
         $InputFile = Join-Path -Path $PSScriptRoot -ChildPath $InputFile
-        Write-Verbose ('[{0}] Full path to input file is <{1}>' -f $MyInvocation.MyCommand, $InputFile)
+        Write-Verbose -Message ('[{0}] Full path to input file is <{1}>' -f $MyInvocation.MyCommand, $InputFile)
 
         # check if file exists
         if (Test-Path -Path $InputFile) {
             # jump out of loop because file exists
-            Write-Verbose ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
+            Write-Verbose -Message ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
             break
         }
-        Write-Verbose ('[{0}] File <{1}> not found.' -f $MyInvocation.MyCommand, $InputFile)
+        Write-Verbose -Message ('[{0}] File <{1}> not found.' -f $MyInvocation.MyCommand, $InputFile)
     }
 
     # make sure an input file was found
@@ -101,9 +101,9 @@ function Import-Hash {
     $params = @{
         Delimiter = $Delimiter
     }
-    if ($Header)    {   $params.Add('Header',    $Header) }
+    if ($Header) { $params.Add('Header',    $Header) }
     $Hash = Get-Content -Path $InputFile | ConvertFrom-Csv @params
-    Write-Verbose ('[{0}] Read {1} key/value pairs from file <{2}>.' -f $MyInvocation.MyCommand, $Hash.Count, $InputFile)
+    Write-Verbose -Message ('[{0}] Read {1} key/value pairs from file <{2}>.' -f $MyInvocation.MyCommand, $Hash.Count, $InputFile)
 
     $Hash
 }

@@ -24,11 +24,13 @@ function Get-VmIdFromHyperV {
     param(
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [string]$ComputerName
+        [string]
+        $ComputerName
         ,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string]$Name
+        [string]
+        $Name
     )
 
     (Get-VM @PSBoundParameters | Select-Object Id).Id
@@ -59,11 +61,13 @@ function Get-VmIdFromVmm {
     param(
         [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [string]$VMMServer
+        [string]
+        $VMMServer
         ,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string]$Name
+        [string]
+        $Name
     )
 
     (Get-SCVirtualMachine @PSBoundParameters | Select-Object Id).Id

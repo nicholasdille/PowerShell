@@ -114,18 +114,25 @@ Function New-Password() {
     [CmdletBinding()]
     [OutputType([string])]
     Param(
-        [int]$Length=10
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $Length=10
         ,
-        [string[]]$Alphabet
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $Alphabet
     )
 
     if (-Not $Alphabet) {
         $Alphabet = $null
-        40..126 + 33 + 35..38 | foreach {
+        40..126 + 33 + 35..38 | ForEach-Object {
             $Alphabet += ,[char][byte]$_
         }
     }
 
+    $TempPassword = ''
     For ($i = 1; $i –le $Length; $i++) {
         $TempPassword += ($Alphabet | Get-Random)
     }

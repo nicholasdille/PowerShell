@@ -2,11 +2,13 @@
     [CmdletBinding()]
     [OutputType([string[]])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path
         ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [int]
         $Size
     )
@@ -17,7 +19,7 @@
             $ChunkExtension = '0' * (3 - $ChunkIndex.ToString().Length)
             $ChunkPath = "$Path.$ChunkExtension$ChunkIndex"
 
-            Write-Verbose ('Processing chunk {0}' -f $ChunkIndex)
+            Write-Verbose -Message ('Processing chunk {0}' -f $ChunkIndex)
             Set-Content -Encoding Byte -Path $ChunkPath -Value $_
             $ChunkPath
 
@@ -29,19 +31,17 @@
 function Join-BinaryFile {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
         [Alias('FullName')]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Path
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $DestinationPath
         ,
-        [Parameter(Mandatory=$false)]
-        [ValidateNotNullOrEmpty()]
         [switch]
         $Force
     )
@@ -52,7 +52,7 @@ function Join-BinaryFile {
                 Remove-Item -Path $DestinationPath -Force
 
             } else {
-                Write-Error ('Destination path {0} already exists. Aborting.' -f $DestinationPath)
+                Write-Error -Message ('Destination path {0} already exists. Aborting.' -f $DestinationPath)
             }
         }
 
@@ -65,13 +65,13 @@ function Join-BinaryFile {
 function New-FileHash {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
         [Alias('FullName')]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Path
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [string]
         $Algorithm = 'SHA256'
     )
@@ -87,12 +87,12 @@ function Test-FileHash {
     [CmdletBinding()]
     [OutputType([bool])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ReferencePath
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $DifferencePath
@@ -107,12 +107,12 @@ function Compare-FileHash {
     [cmdletBinding()]
     [OutputType([string[]])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ReferencePath
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $DifferencePath
@@ -120,7 +120,7 @@ function Compare-FileHash {
         [switch]
         $ShowMatchesOnly
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [string]
         $Algorithm = 'SHA256'
     )
@@ -128,15 +128,15 @@ function Compare-FileHash {
     Process {
         if ((Compare-Object -ReferenceObject (Get-ChildItem -Path $DifferencePath -File | Select-Object -Property Name,Length) -DifferenceObject (Get-ChildItem -Path $ReferencePath -File | Select-Object -Property Name,Length)).Count -eq 0) {
             Get-ChildItem -Path $DifferencePath -File -Filter '*.SHA256' | ForEach-Object {
-                Write-Verbose ('Processing {0}' -f $_.Name)
-                if (Test-FileHash -ReferencePath "$RightPath\$($_.Name)" -DifferencePath "$LeftPath\$($_.Name)") {
+                Write-Verbose -Message ('Processing {0}' -f $_.Name)
+                if (Test-FileHash -ReferencePath "$ReferencePath\$($_.Name)" -DifferencePath "$DifferencePath\$($_.Name)") {
                     if ($ShowMatchesOnly) {
-                        "$LeftPath\$($_.BaseName)"
+                        "$ReferencePath\$($_.BaseName)"
                     }
 
                 } else {
                     if (-not $ShowMatchesOnly) {
-                        "$LeftPath\$($_.BaseName)"
+                        "$ReferencePath\$($_.BaseName)"
                     }
                 }
             }

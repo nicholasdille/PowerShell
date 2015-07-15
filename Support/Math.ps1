@@ -24,13 +24,13 @@
 
             #Write-Host "min=$($result.min)"
             if ($result.min -eq $null -or $item -lt $result.min) {
-                #Write-Host "min before=$($result.min) after=$item"
+                #Write-Host -Message "min before=$($result.min) after=$item"
                 $result.min = $item
             }
 
             #Write-Host "max=$($result.max)"
             if ($result.max -eq $null -or $item -gt $result.max) {
-                #Write-Host "max before=$($result.max) after=$item"
+                #Write-Host -Message "max before=$($result.max) after=$item"
                 $result.max = $item
             }
         }
@@ -83,7 +83,7 @@ function ConvertTo-Histogram {
             $BucketSize = ($Maximum - $Minimum) / $BucketCount
         }
 
-        Write-Verbose ('[{0}] Initilized bucket count <{1}> and bucket size <{2}>' -f $MyInvocation.MyCommand, $BucketCount, $BucketSize)
+        Write-Verbose -Message ('[{0}] Initilized bucket count <{1}> and bucket size <{2}>' -f $MyInvocation.MyCommand, $BucketCount, $BucketSize)
 
         for ($BucketIndex = 0; $BucketIndex -lt $BucketCount; ++$BucketIndex) {
             $Buckets += ,@(0)
