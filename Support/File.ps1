@@ -182,3 +182,79 @@ function Clear-TemporaryFileAttribute {
         }
     }
 }
+
+function New-File {
+    [CmdletBinding()]
+    [OutputType([array])]
+    param(
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $FileCount = 3
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $ChunkCount = 1024
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $ChunkSize = 1KB
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $Delay = 0
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $BasePath = (Get-Location).ProviderPath
+        <#,
+        [Parameter(Mandatory=$false)]
+        [ValidateNotNullOrEmpty()]
+        $ScriptBlock#>
+    )
+
+    $FileSize = $ChunkCount * $ChunkSize
+    $Chunk    = 'x' * $ChunkSize
+    
+    foreach ($Iteration in 1..$FileCount) {
+        $RandomFileName = [System.IO.Path]::GetRandomFileName()
+        $TempFilePath = Join-Path -Path $BasePath -ChildPath $RandomFileName
+        foreach ($Index in 1..$ChunkCount) {
+            [System.IO.File]::AppendAllText($TempFilePath, $Chunk)
+            if ($Delay -gt 0) {Start-Sleep -Milliseconds $Delay}
+        }
+        $TempFilePath
+    }
+}
+
+function Test-FileSize {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineProperty)]
+        [Alias('FullName')]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $Path
+        ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $Size
+    )
+
+    PROCESS {
+        foreach ($Item in $Path) {
+            $TempFile = Get-Item -Path $Item
+            Write-Host "$Item..." -NoNewline
+            if ($TempFile.Length -eq $Size) {
+                Write-Host -Message ' Ok'
+            } else {
+                Write-Host -Message (' Error (size is {0} instead of {1})' -f $TempFile.Length, $FileSize)
+            }
+        }
+    }
+}
