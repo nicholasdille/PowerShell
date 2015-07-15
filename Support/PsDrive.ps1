@@ -18,12 +18,12 @@
     [CmdletBinding()]
     [OutputType()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $DestinationPath
@@ -79,17 +79,17 @@ function Move-DuplicateItem {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $DestinationPath
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $DuplicatePath = 'Duplicates'
@@ -111,7 +111,7 @@ function Move-DuplicateItem {
 function Get-FolderSize {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
         [Alias('FullName')]
         [ValidateNotNullOrEmpty()]
         [string[]]
@@ -134,10 +134,18 @@ function Get-FolderSize {
 function Get-Tree {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
         [string]
         $Path
     )
+
+    if (-not (Test-Path -Path $Path)) {
+        throw ('[{0}] Specified path ({1}) does not exist. Aborting.' -f $MyInvocation.MyCommand, $Path)
+    }
+    if (-not (Get-Item -Path $Path | Select-Object -ExpandProperty PSIsContainer)) {
+        throw ('[{0}] Specified path ({1}) is not a container. Aborting.' -f $MyInvocation.MyCommand, $Path)
+    }
     
     Get-Item -Path $Path | Select-Object -ExpandProperty FullName
     Get-ChildItem -Path $Path -Recurse -Directory | Select-Object -ExpandProperty FullName
@@ -146,19 +154,23 @@ function Get-Tree {
 function Get-FileExtension {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path
     )
 
-    Get-ChildItem -Path $PAth -File -Recurse | Select -ExpandProperty Extension | Group-Object | Select-Object Name,Count | Sort-Object -Property Count -Descending
+    if (-not (Test-Path -Path $Path)) {
+        throw ('[{0}] Specified path ({1}) does not exist. Aborting.' -f $MyInvocation.MyCommand, $Path)
+    }
+
+    Get-ChildItem -Path $Path -File -Recurse | Select -ExpandProperty Extension | Group-Object | Select-Object Name,Count | Sort-Object -Property Count -Descending
 }
 
 function Get-DuplicateItem {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path

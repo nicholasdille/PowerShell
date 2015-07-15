@@ -1,17 +1,17 @@
 ﻿function Set-Credential {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,ParameterSetName='CredentialName')]
+        [Parameter(Mandatory,ParameterSetName='CredentialName')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name
         ,
-        [Parameter(Mandatory=$true,ParameterSetName='CredentialFile')]
+        [Parameter(Mandatory,ParameterSetName='CredentialFile')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path
         ,
-        [Parameter(Mandatory=$true,ParameterSetName='CredentialObject')]
+        [Parameter(Mandatory,ParameterSetName='CredentialObject')]
         [ValidateNotNullOrEmpty()]
         [pscredential]
         $Credential
@@ -48,22 +48,22 @@ function Clear-Credential {
 function Set-PSSession {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,ParameterSetName='CredentialName')]
+        [Parameter(Mandatory,ParameterSetName='CredentialName')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name
         ,
-        [Parameter(Mandatory=$true,ParameterSetName='CredentialFile')]
+        [Parameter(Mandatory,ParameterSetName='CredentialFile')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path
         ,
-        [Parameter(Mandatory=$true,ParameterSetName='CredentialObject')]
+        [Parameter(Mandatory,ParameterSetName='CredentialObject')]
         [ValidateNotNullOrEmpty()]
         [pscredential]
         $Credential
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName
@@ -96,22 +96,22 @@ function Clear-PSSession {
 function Set-CimSession {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true,ParameterSetName='CredentialName')]
+        [Parameter(Mandatory,ParameterSetName='CredentialName')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Name
         ,
-        [Parameter(Mandatory=$true,ParameterSetName='CredentialFile')]
+        [Parameter(Mandatory,ParameterSetName='CredentialFile')]
         [ValidateNotNullOrEmpty()]
         [string]
         $Path
         ,
-        [Parameter(Mandatory=$true,ParameterSetName='CredentialObject')]
+        [Parameter(Mandatory,ParameterSetName='CredentialObject')]
         [ValidateNotNullOrEmpty()]
         [pscredential]
         $Credential
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
         $ComputerName

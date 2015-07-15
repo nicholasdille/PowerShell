@@ -14,6 +14,13 @@
     foreach ($InputFile in $File) {
         Write-Verbose ('[{0}] Checking for input file <{1}>' -f $MyInvocation.MyCommand, $InputFile)
 
+        # check if file exists
+        if (Test-Path -Path $InputFile) {
+            # jump out of loop because file exists
+            Write-Verbose ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
+            break
+        }
+
         # expand path to input file
         $InputFile = Join-Path -Path $PSScriptRoot -ChildPath $InputFile
         Write-Verbose ('[{0}] Full path to input file is <{1}>' -f $MyInvocation.MyCommand, $InputFile)
@@ -43,17 +50,17 @@ function Import-Hash {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $File
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string]
         $Delimiter = ';'
         ,
-        [Parameter(Mandatory=$false)]
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
         [string[]]
         $Header
@@ -64,6 +71,13 @@ function Import-Hash {
     # check for input files in the following order
     foreach ($InputFile in $File) {
         Write-Verbose ('[{0}] Checking for input file <{1}>' -f $MyInvocation.MyCommand, $InputFile)
+
+        # check if file exists
+        if (Test-Path -Path $InputFile) {
+            # jump out of loop because file exists
+            Write-Verbose ('[{0}] Found file <{1}>. Skipping other candidates.' -f $MyInvocation.MyCommand, $InputFile)
+            break
+        }
 
         # expand path to input file
         $InputFile = Join-Path -Path $PSScriptRoot -ChildPath $InputFile
@@ -84,14 +98,12 @@ function Import-Hash {
     }
 
     # read hash from file
-                        $params = @{}
-    if ($Delimiter) {   $params.Add('Delimiter', $Delimiter) }
+    $params = @{
+        Delimiter = $Delimiter
+    }
     if ($Header)    {   $params.Add('Header',    $Header) }
-    Get-Content -Path $InputFile
-    #[hashtable]$Hash = @{}
     $Hash = Get-Content -Path $InputFile | ConvertFrom-Csv @params
-    Write-Verbose $Hash.GetType()
-    Write-Verbose ('[{0}] Read {1} tenants from file <{2}>.' -f $MyInvocation.MyCommand, $Hash.Count, $InputFile)
+    Write-Verbose ('[{0}] Read {1} key/value pairs from file <{2}>.' -f $MyInvocation.MyCommand, $Hash.Count, $InputFile)
 
     $Hash
 }
