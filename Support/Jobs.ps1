@@ -26,140 +26,139 @@
         [ValidateNotNullOrEmpty()]
         [int]
         $Delay = 2
+        ,
+        [switch]
+        $Wait
+        ,
+        [switch]
+        $ShowProgress
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ProgressActivityMessage = 'Processed input objects'
     )
 
     Begin {
-        Write-Verbose -Message ('[{0}] Initializing variables' -f $MyInvocation.MyCommand)
+        Write-Verbose ('[{0}] Initializing variables' -f $MyInvocation.MyCommand)
         $Jobs = @()
         $InputIndex = 0
+        if ($Wait) {
+            Write-Verbose ('[{0}] Setting <ThrottleLimit> to 1 because <Wait> was specified.' -f $MyInvocation.MyCommand)
+            $ThrottleLimit = 1
+        }
 
-        Write-Verbose -Message ('[{0}] Processing {1} objects' -f $MyInvocation.MyCommand, @($InputObject).Count)
+        Write-Verbose ('[{0}] Processing {1} objects' -f $MyInvocation.MyCommand, $InputObject.Count)
     }
 
     Process {
-        while ($InputIndex -lt @($InputObject).Count) {
-            Write-Debug -Message ('[{0}] InputIndex={1} JobCount={2} RunningJobCount={3}' -f $MyInvocation.MyCommand, $InputIndex, @($Jobs).Count, @($Jobs | Get-Job | Where-Object {$_.State -ieq 'Running'}).Count)
+        while ($InputIndex -lt $InputObject.Count) {
+            Write-Debug ('[{0}] InputIndex={1} JobCount={2} RunningJobCount={3}' -f $MyInvocation.MyCommand, $InputIndex, $Jobs.Count, ($Jobs | Get-Job | Where-Object {$_.State -ieq 'Running'}).Count)
 
             if ($Jobs.Count -lt $ThrottleLimit -or ($Jobs | Get-Job | Where-Object {$_.State -ieq 'Running'}).Count -lt $ThrottleLimit) {
-                Write-Verbose -Message ('[{0}] New job for parameter index {1}' -f $MyInvocation.MyCommand, $InputIndex)
-                $Jobs += Start-Job -ScriptBlock $Scriptblock -Name $InputObject[$InputIndex].ToString() -ArgumentList (@($InputObject[$InputIndex]) + $ArgumentList)
+                Write-Verbose ('[{0}] New job for parameter index {1}' -f $MyInvocation.MyCommand, $InputIndex)
+                $Job = Start-Job -ScriptBlock $Scriptblock -Name $InputObject[$InputIndex].ToString() -ArgumentList (@($InputObject[$InputIndex]) + $ArgumentList)
+                $Jobs += $Job
+                Write-Progress -Activity $ProgressActivityMessage -Status "Invoked $($InputObject[$InputIndex].ToString())" -PercentComplete ($Jobs.Count / $InputObject.Count * 100)
+                if ($Wait) {
+                    Write-Output ('[{0}] Receiving output for job <{1}>' -f $MyInvocation.MyCommand, $Job.Name)
+                    $Job | Receive-Job -Wait
+                }
 
                 ++$InputIndex
 
             } else {
+                Write-Debug ('[{0}] Waiting for a job to finish' -f $MyInvocation.MyCommand)
                 Start-Sleep -Seconds $Delay
             }
         }
 
-        Write-Verbose -Message ('[{0}] All input objects are being processed' -f $MyInvocation.MyCommand)
+        Write-Verbose ('[{0}] All input objects are being processed' -f $MyInvocation.MyCommand)
+        Write-Progress -Activity $ProgressActivityMessage -Completed
         $Jobs
     }
 }
 
 function Install-WindowsUpdate {
     [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
     param(
-        [Parameter()]
+        [Parameter(Mandatory=$false)]
         [ValidateSet('All', 'Recommended')]
         [string]
         $Filter = 'Recommended'
         ,
-        [Parameter()]
+        [Parameter(Mandatory=$false)]
         [switch]
         $ScanOnly
-        ,
-        [Parameter()]
-        [switch]
-        $DownloadOnly
-        ,
-        [Parameter()]
-        [ValidateSet('None', 'Shutdown', 'Reboot')]
-        [string]
-        $PowerAction = 'None'
-        ,
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [int]
-        $PowerActionDelaySeconds = 5
     )
+
+    $ResultData = @{}
 
     $SearchString = @{
         'All'         = "IsInstalled=0 and Type='Software' and AutoSelectOnWebsites=1"
         'Recommended' = "IsInstalled=0 and Type='Software'"
     }
-    Write-Information -Message ('[{0}] Using search string <{1}> based on filter <{2}>' -f $MyInvocation.MyCommand, $SearchString[$Filter], $Filter)
     
-    Write-Information -Message ('[{0}] Searching for updates' -f $MyInvocation.MyCommand)
     $UpdateSession = New-Object -Com Microsoft.Update.Session
     $UpdateSearcher = $UpdateSession.CreateUpdateSearcher()
     $SearchResult = $UpdateSearcher.Search($SearchString[$Filter])
-
+    $ResultData.Add('UpdatesFound', $SearchResult.Updates.Count)
     if ($SearchResult.Updates.Count -eq 0) {
-        Write-Information -Message ('[{0}] No updates found' -f $MyInvocation.MyCommand)
-        return
+        Write-Verbose ('[{0}] No updates found' -f $MyInvocation.MyCommand)
+        return $ResultData
     }
 
     if ($ScanOnly) {
-        Write-Information -Message ('[{0}] ScanOnly' -f $MyInvocation.MyCommand)
         foreach ($Update in $SearchResult.Updates) {
-            Write-Host ('[{0}] Found update: {1}' -f $MyInvocation.MyCommand, $Update.Title)
+            Write-Host $Update.Title
         }
-        Write-Information -Message ('[{0}] ScanOnly. Done.' -f $MyInvocation.MyCommand)
-        return
+        $ResultData.Add('ScanOnly', $ScanOnly)
+        return $ResultData
     }
 
-    Write-Information -Message ('[{0}] Building download list' -f $MyInvocation.MyCommand)
     $UpdatesToDownload = New-Object -Com Microsoft.Update.UpdateColl
     foreach ($Update in $SearchResult.Updates) {
-        Write-Information -Message ('[{0}] Adding an update to the download list: {0}.' -f $MyInvocation.MyCommand, $Update.Title)
+        Write-Verbose ('[{0}] Adding an update to the download list: {1}.' -f $MyInvocation.MyCommand, $Update.Title)
         $UpdatesToDownload.Add($Update) | Out-Null
     }
+    $ResultData.Add('UpdatedToDownload', $UpdatesToDownload.Count)
     if ($UpdatesToDownload.Count -eq 0) {
-        Write-Information -Message ('[{0}] No updates found. Aborting.' -f $MyInvocation.MyCommand)
-        return
+        Write-Verbose ('[{0}] No updates found. Aborting.' -f $MyInvocation.MyCommand)
+        return $ResultData
     }
 
-    Write-Information -Message ('[{0}] Downloading updates' -f $MyInvocation.MyCommand)
     $Downloader = $UpdateSession.CreateUpdateDownloader()
     $Downloader.Updates = $UpdatesToDownload
+    Write-Verbose ('[{0}] Downloading updates ...' -f $MyInvocation.MyCommand)
     $Downloader.Download()
 
-    if ($DownloadOnly) {
-        Write-Information -Message ('[{0}] DownloadOnly. Done.' -f $MyInvocation.MyCommand)
-        return
-    }
-
-    Write-Information -Message ('[{0}] Building installation list' -f $MyInvocation.MyCommand)
     $UpdatesToInstall = New-Object -Com Microsoft.Update.UpdateColl
     foreach ($Update in $SearchResult.Updates) {
         if ($Update.IsDownloaded) {
-            Write-Information -Message ('[{0}] Adding a downloaded update to the installation list: {0}.' -f $MyInvocation.MyCommand, $Update.Title)
+            Write-Verbose ('[{0}] Adding a downloaded update to the installation list: {1}.' -f $MyInvocation.MyCommand, $Update.Title)
             $UpdatesToInstall.Add($Update) | Out-Null
         }
     }
+    $ResultData.Add('UpdatedToInstall', $UpdatesToInstall.Count)
     if ($UpdatesToInstall.Count -eq 0) {
-        Write-Information -Message ('[{0}] No updates downloaded. Aborting.' -f $MyInvocation.MyCommand)
-        return
+        Write-Verbose ('[{0}] No updates downloaded. Aborting.' -f $MyInvocation.MyCommand)
+        return $ResultData
     }
 
-    Write-Information -Message ('[{0}] Installing updates' -f $MyInvocation.MyCommand)
     $Installer = $UpdateSession.CreateUpdateInstaller()
+    Write-Verbose ('[{0}] Installing Updates ...' -f $MyInvocation.MyCommand)
     $Installer.Updates = $UpdatesToInstall
     $InstallationResult = $Installer.Install()
-
-    if ($InstallationResult.RebootRequired -and $PowerAction -ine 'None') {
-        Write-Information -Message ('[{0}] PowerAction' -f $MyInvocation.MyCommand)
-
-        $PowerActionParameter = ''
-        if ($PowerAction -ieq 'Shutdown') {
-            $PowerActionParameter = '/s'
-
-        } elseif ($PowerAction -ieq 'Reboot') {
-            $PowerActionParameter = '/r'
-        }
-        Write-Information -Message ('[{0}] {1} ({2}) in {3} seconds' -f $MyInvocation.MyCommand, $PowerAction, $PowerActionParameter, $PowerActionDelaySeconds)
-        shutdown.exe $PowerActionParameter /t $PowerActionDelaySeconds
+    Write-Verbose ('[{0}] Installation completed' -f $MyInvocation.MyCommand)
+    
+    for ($i = 0; $i -lt $UpdatesToInstall.Count; ++$i) {
+        $ResultData.Add($UpdatesToInstall.Item($i), $InstallationResult.GetUpdateResult($i).ResultCode)
     }
+    $ResultData.Add('ResultCode', $InstallationResult.ResultCode)
+    $ResultData.Add('RebootRequired', $InstallationResult.RebootRequired)
+    $ResultData.Add('RebootInitiated', $false)
 
-    Write-Information -Message ('[{0}] Done.' -f $MyInvocation.MyCommand)
+    Write-Verbose ('[{0}] Done' -f $MyInvocation.MyCommand)
+    $ResultData
 }
