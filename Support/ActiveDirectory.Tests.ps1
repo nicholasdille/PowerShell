@@ -86,9 +86,12 @@ Describe 'Active Directory' {
         }
         It 'Completes for new group' {
             Mock Test-Group { $false }
+            #region Workaround for mock which is not masking the original cmdlet from module ActiveDirectory
+            function New-ADGroup {}
+            #endregion
             Mock New-ADGroup {}
             New-Group -Identity 'MyGroup' -Category Security -Scope Global -Path 'CN=Users,DC=mydomain,DC=local' #| Should Be $true
-            Assert-MockCalled New-ADGroup -Times 1
+            Assert-MockCalled New-ADGroup -Exactly -Times 1
         }
         It 'Fails with AD operation' {
             Mock Test-Group { $false }
@@ -142,32 +145,22 @@ Describe 'Active Directory' {
             }
             Mock Set-ADGroup {}
             Mock Rename-ADObject {}
-            Rename-ADGroup -Identity 'MyGroup' -NewName 'MyNewGroup' #| Should Be $true
+            Rename-ADGroup -Identity 'MyGroup' -NewName 'MyNewGroup' | Should Be $true
+            Assert-MockCalled Test-Group -Times 2
             Assert-MockCalled Set-ADGroup -Times 1
-            Assert-MockCalled Rename-ADObject -Times 1
+            Assert-MockCalled Rename-ADObject -Exactly -Times 1
         }
-        It 'Fails on first failed AD operation' {
+        It 'Fails to set group properties' {
             Mock Test-Group { $true  } -ParameterFilter {$Identity -eq 'MyGroup'}
             Mock Test-Group { $false } -ParameterFilter {$Identity -eq 'MyNewGroup'}
-            Mock Get-ADGroup { throw }
-            Mock Set-ADGroup {}
-            Mock Rename-ADObject {}
-            Mock Write-Error {}
-            Rename-ADGroup -Identity 'MyGroup' -NewName 'MyNewGroup' | Should Be $false
-        }
-        It 'Fails on second failed AD operation' {
-            Mock Test-Group { $true  } -ParameterFilter {$Identity -eq 'MyGroup'}
-            Mock Test-Group { $false } -ParameterFilter {$Identity -eq 'MyNewGroup'}
-            Mock Get-ADGroup {}
             Mock Set-ADGroup { throw }
             Mock Rename-ADObject {}
             Mock Write-Error {}
             Rename-ADGroup -Identity 'MyGroup' -NewName 'MyNewGroup' | Should Be $false
         }
-        It 'Fails on second failed AD operation' {
+        It 'Fails to rename AD object' {
             Mock Test-Group { $true  } -ParameterFilter {$Identity -eq 'MyGroup'}
             Mock Test-Group { $false } -ParameterFilter {$Identity -eq 'MyNewGroup'}
-            Mock Get-ADGroup {}
             Mock Set-ADGroup {}
             Mock Rename-ADObject { throw }
             Mock Write-Error {}
