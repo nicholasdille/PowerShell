@@ -1,4 +1,6 @@
-﻿function Get-DomainController {
+﻿#Requires -Modules ActiveDirectory
+
+function Get-DomainController {
     [CmdletBinding()]
     [OutputType([string])]
     param(
@@ -170,13 +172,18 @@ function New-Group {
                 GroupScope     = $Scope
                 DisplayName    = $Identity
                 Path           = $Path
-                Description    = $Description
-                Server         = $Server
-                Credential     = $Credential
+            }
+            if ($Description) {
+                $CreateParams.Add('Description', $Description)
+            }
+            if ($Server -And $Credential) {
+                $CreateParams.Add('Server',     $Server)
+                $CreateParams.Add('Credential', $Credential)
             }
             try {
                 Write-Debug -Message ('[{0}] Inside try/catch' -f $MyInvocation.MyCommand)
                 New-ADGroup @CreateParams -Confirm:$false -Force:$Force
+                #New-ADGroup -Name $Identity -DisplayName $Identity -Description $Description -SamAccountName $Identity -GroupCategory $Category -GroupScope $Scope -Path $Path -Confirm:$false -Force:$Force
                 Write-Verbose -Message ('[{0}] Group <{1}> was successfully created' -f $MyInvocation.MyCommand, $Identity)
                 $GroupCreated = $true
 
@@ -307,21 +314,24 @@ function Rename-ADGroup {
             return $false
         }
 
-        $Group = $null
+        #$Group = $null
         try {
-            $Group = Get-ADGroup -Identity $Identity @param
-            Write-Verbose -Message ('[{0}] Retrieved object for group name <{1}>' -f $MyInvocation.MyCommand, $Identity)
+            #$Group = Get-ADGroup -Identity $Identity @param
+            #Write-Verbose -Message ('[{0}] Retrieved object for group name <{1}>' -f $MyInvocation.MyCommand, $Identity)
 
             Write-Verbose -Message ('[{0}] Setting SamAccountName for group' -f $MyInvocation.MyCommand)
-            Set-ADGroup -Identity $Group -SamAccountName $NewName @param -ErrorAction SilentlyContinue
+            #Set-ADGroup -Identity $Group -SamAccountName $NewName @param -ErrorAction Stop
+            Set-ADGroup -Identity $Identity -SamAccountName $NewName @param -ErrorAction Stop
 
             if ($Description) {
                 Write-Verbose -Message ('[{0}] Setting description for group' -f $MyInvocation.MyCommand)
-                Set-ADGroup -Identity $Group -Description $Description @param -ErrorAction SilentlyContinue
+                #Set-ADGroup -Identity $Group -Description $Description @param -ErrorAction Stop
+                Set-ADGroup -Identity $Identity -Description $Description @param -ErrorAction Stop
             }
 
             Write-Verbose -Message ('[{0}] Setting common name and display name' -f $MyInvocation.MyCommand)
-            Rename-ADObject -Identity $Group -NewName $NewName @param -ErrorAction SilentlyContinue
+            #Rename-ADObject -Identity $Group -NewName $NewName @param -ErrorAction Stop
+            Rename-ADObject -Identity $Identity -NewName $NewName @param -ErrorAction Stop
 
             $Renamed = $true
 
@@ -330,7 +340,7 @@ function Rename-ADGroup {
             }
 
         } catch {
-            Write-Error -Message ('[{0}] Failed to rename group {1} to {2}' -f $MyInvocation.MyCommand, $Group, $NewName)
+            Write-Error -Message ('[{0}] Failed to rename group {1} to {2}' -f $MyInvocation.MyCommand, $Identity, $NewName)
             $Renamed = $false
         }
 
