@@ -4,34 +4,48 @@ $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 
 #Requires -Modules ActiveDirectory
 
-Describe 'Get-Fqdn' {
-    $NameArray = Get-ADComputer -Filter * | Select-Object -ExpandProperty Name -First 2
-    $FqdnArray = @('', '')
+Describe 'Networking' {
+    Context 'Get-Fqdn' {
+        $DnsNames = @{
+            'dc-01' = 'dc-01.mydomain.local'
+            'dc-02' = 'dc-02.mydomain.local'
+        }
+        Mock Resolve-DnsName {
+            [pscustomobject]@{Name = $DnsNames['dc-01']}
+        } -ParameterFilter {$Name -like 'dc-01*'}
+        Mock Resolve-DnsName {
+            [pscustomobject]@{Name = $DnsNames['dc-02']}
+        } -ParameterFilter {$Name -like 'dc-02*'}
 
-    It 'works for a single host parameter' {
-        $FqdnArray[0] = Get-Fqdn -ComputerName $NameArray[0]
-        $FqdnArray[0] -like "$($NameArray[0]).*" | Should Be $true
-    }
-    It 'works for a single host pipeline' {
-        $FqdnArray[0] = $NameArray[0] | Get-Fqdn
-        $FqdnArray[0] -like "$($NameArray[0]).*" | Should Be $true
-    }
-    It 'does not choke on FQDN parameter' {
-        Get-Fqdn -ComputerName $FqdnArray[0] | Should Be $FqdnArray[0]
-    }
-    It 'does not choke on FQDN pipeline' {
-        $FqdnArray[0] | Get-Fqdn | Should Be $FqdnArray[0]
-    }
-    It 'works for a host array parameter' {
-        $FqdnArray = Get-Fqdn -ComputerName $NameArray
-        $FqdnArray.Length | Should Be 2
-        $FqdnArray -icontains $NameArray[0] | Should Be $true
-        $FqdnArray -icontains $NameArray[1] | Should Be $true
-    }
-    It 'works for a host array pipeline' {
-        $FqdnArray = $NameArray | Get-Fqdn
-        $FqdnArray.Length | Should Be 2
-        $FqdnArray -icontains $NameArray[0] | Should Be $true
-        $FqdnArray -icontains $NameArray[1] | Should Be $true
+        It 'works for a single host parameter' {
+            $Result = Get-Fqdn -ComputerName 'dc-01'
+            $Result -is [array] | Should Be $false
+            $Result | Should Be $DnsNames['dc-01']
+        }
+        It 'works for a single host in the pipeline' {
+            $Result = 'dc-01' | Get-Fqdn
+            $Result -is [array] | Should Be $false
+            $Result | Should Be $DnsNames['dc-01']
+        }
+        It 'does not choke on FQDN parameter' {
+            Get-Fqdn -ComputerName $DnsNames['dc-01'] | Should Be $DnsNames['dc-01']
+        }
+        It 'does not choke on FQDN in the pipeline' {
+            $DnsNames['dc-01'] | Get-Fqdn | Should Be $DnsNames['dc-01']
+        }
+        It 'works for a host array parameter' {
+            $Result = Get-Fqdn -ComputerName 'dc-01', 'dc-02'
+            $Result -is [array] | Should Be $true
+            $Result.Length | Should Be 2
+            $Result -icontains $DnsNames['dc-01'] | Should Be $true
+            $Result -icontains $DnsNames['dc-02'] | Should Be $true
+        }
+        It 'works for a host array in the pipeline' {
+            $Result = 'dc-01', 'dc-02' | Get-Fqdn
+            $Result -is [array] | Should Be $true
+            $Result.Length | Should Be 2
+            $Result -icontains $DnsNames['dc-01'] | Should Be $true
+            $Result -icontains $DnsNames['dc-02'] | Should Be $true
+        }
     }
 }

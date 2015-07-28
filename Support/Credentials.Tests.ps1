@@ -32,9 +32,8 @@ Describe 'Credential Store' {
     }
     Context 'Enter-PsRemoteSession' {
         It 'Enters a remote session' {
-            Mock New-PsRemoteSession {}
             Mock Enter-PSSession {}
-            Enter-PsRemoteSession -ComputerName someserver
+            Enter-PsRemoteSession -ComputerName localhost
             Assert-MockCalled Enter-PSSession -Exactly -Times 1
         }
     }
