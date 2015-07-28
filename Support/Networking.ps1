@@ -1,6 +1,6 @@
 ﻿function Get-Fqdn {
     [CmdletBinding()]
-    [OutputType([String])]
+    [OutputType([array])]
     param(
         [Parameter(Mandatory,ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
