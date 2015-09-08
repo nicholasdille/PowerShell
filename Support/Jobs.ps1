@@ -162,3 +162,106 @@ function Install-WindowsUpdate {
     Write-Verbose ('[{0}] Done' -f $MyInvocation.MyCommand)
     $ResultData
 }
+
+function ConvertTo-Progress {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $ProgressText
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $Id
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $ParentId
+    )
+
+    Process {
+        foreach ($Line in $ProgressText) {
+            $ProgressParams = @{
+                Activity          = '[UNKNOWN_ACTIVITY]'
+                CurrentOperation  = '[UNKNOWN_OPERATION]'
+                Status            = '[UNKNOWN_STATUS]'
+                PercentComplete   = 0
+            }
+            if ($PSBoundParameters.ContainsKey('Id')) {
+                $ProgressParams.Add('Id', $Id)
+            }
+            if ($PSBoundParameters.ContainsKey('ParentId')) {
+                $ProgressParams.Add('ParentId', $ParentId)
+            }
+
+            $LineMatched = $false
+
+            if ($Line -imatch 'Id=(\S+)') {
+                $ProgressParams['Id'] = $Matches[1]
+                $LineMatched = $true
+            }
+            if ($Line -imatch 'ParentId=(\S+)') {
+                $ProgressParams['ParentId'] = $Matches[1]
+                $LineMatched = $true
+            }
+            if ($Line -imatch 'Activity="([^"]+)"') {
+                $ProgressParams['Activity'] = $Matches[1]
+                $LineMatched = $true
+            }
+            if ($Line -imatch 'Operation="([^"]+)"') {
+                $ProgressParams['CurrentOperation'] = $Matches[1]
+                $LineMatched = $true
+            }
+            if ($Line -imatch 'Status="([^"]+)"') {
+                $ProgressParams['Status'] = $Matches[1]
+                $LineMatched = $true
+            }
+            if ($Line -imatch 'Percentage=(\S+)') {
+                $ProgressParams['PercentComplete'] = $Matches[1]
+                $LineMatched = $true
+            }
+
+            if ($LineMatched) {
+                Write-Progress @ProgressParams
+
+            } else {
+                Write-Output $Line
+            }
+
+            Start-Sleep -Seconds 2
+        }
+    }
+}
+
+function Show-JobProgress {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [ValidateNotNullOrEmpty()]
+        [System.Management.Automation.Job[]]
+        $Job
+    )
+
+    Process {
+        $Job.ChildJobs | ForEach-Object {
+            if (-not $_.Progress) {
+                return
+            }
+
+            $LastProgress = $_.Progress[-1]
+
+            $ProgressParams = @{}
+            if ($LastProgress.Activity)          { $ProgressParams.Add('Activity',         $LastProgress.Activity) }
+            if ($LastProgress.StatusDescription) { $ProgressParams.Add('Status',           $LastProgress.StatusDescription) }
+            if ($LastProgress.CurrentOperation)  { $ProgressParams.Add('CurrentOperation', $LastProgress.CurrentOperation) }
+            if ($LastProgress.ActivityId)        { $ProgressParams.Add('Id',               $LastProgress.ActivityId) }
+            if ($LastProgress.ParentActivityId)  { $ProgressParams.Add('ParentId',         $LastProgress.ParentActivityId) }
+            if ($LastProgress.PercentComplete)   { $ProgressParams.Add('PercentComplete',  $LastProgress.PercentComplete) }
+            if ($LastProgress.SecondsRemaining)  { $ProgressParams.Add('SecondsRemaining', $LastProgress.SecondsRemaining) }
+            Write-Progress @ProgressParams
+        }
+    }
+}
