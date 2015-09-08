@@ -49,3 +49,32 @@ function ConvertTo-Hash {
         $hash
     }
 }
+
+function ConvertFrom-KeyValueString {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $InputObject
+    )
+
+    Begin {
+        $Data = @{}
+    }
+
+    Process {
+        foreach ($Line in $InputObject) {
+            if ($Line -imatch '^([^=]+)=(.*)$') {
+                $Data.Add($Matches[1], $Matches[2])
+            
+            } else {
+                Write-Error -Message ('[{0}] Mangled input line: <{1}>' -f $MyInvocation.MyCommand, $Line)
+            }
+        }
+    }
+
+    End {
+        $Data
+    }
+}
