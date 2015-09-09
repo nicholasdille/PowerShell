@@ -186,7 +186,6 @@ function ConvertTo-Progress {
         foreach ($Line in $ProgressText) {
             $ProgressParams = @{
                 Activity          = '[UNKNOWN_ACTIVITY]'
-                CurrentOperation  = '[UNKNOWN_OPERATION]'
                 Status            = '[UNKNOWN_STATUS]'
                 PercentComplete   = 0
             }
