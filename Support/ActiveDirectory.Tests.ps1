@@ -167,6 +167,8 @@ Describe 'Active Directory' {
             Rename-ADGroup -Identity 'MyGroup' -NewName 'MyNewGroup' | Should Be $false
         }
     }
-    Context 'Wait-ADGroup' {}
+    Context 'Wait-ADGroup' {
+        # Unable to determine whether group exist after timeout
+    }
     Context 'Add-Permission' {}
 }

@@ -229,8 +229,6 @@ function ConvertTo-Progress {
             } else {
                 Write-Output $Line
             }
-
-            Start-Sleep -Seconds 2
         }
     }
 }
@@ -247,7 +245,29 @@ function Show-JobProgress {
         [ValidateNotNullOrEmpty()]
         [scriptblock]
         $FilterScript
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $ParentId
+        ,
+        [Parameter()]
+        [switch]
+        $GenerateUniqueId
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $UniqueIdOffset = -1
     )
+
+    Begin {
+        $ActivityId = @{}
+
+        if ($GenerateUniqueId -and $ParentId -and -not $UniqueIdOffset -gt -1) {
+            $UniqueIdOffset = $ParentId
+        }
+    }
 
     Process {
         $Job.ChildJobs | ForEach-Object {
@@ -272,6 +292,23 @@ function Show-JobProgress {
                 if ($_.ParentActivityId  -and $_.ParentActivityId  -gt -1)    { $ProgressParams.Add('ParentId',         $_.ParentActivityId) }
                 if ($_.PercentComplete   -and $_.PercentComplete   -gt -1)    { $ProgressParams.Add('PercentComplete',  $_.PercentComplete) }
                 if ($_.SecondsRemaining  -and $_.SecondsRemaining  -gt -1)    { $ProgressParams.Add('SecondsRemaining', $_.SecondsRemaining) }
+
+                if ($ParentId) {
+                    $ProgressParams['ParentId'] = $ParentId
+                }
+
+                if ($GenerateUniqueId) {
+                    #$ActivityKey = '{0}@@@{1}' -f $_.Activity, $_.StatusDescription
+                    $ActivityKey = $_.Activity
+
+                    if (-not $ActivityId.ContainsKey($ActivityKey)) {
+                        $NextId = $UniqueIdOffset + $ActivityId.Count + 1
+
+                        $ActivityId.Add($ActivityKey, $NextId)
+                    }
+
+                    $ProgressParams['Id'] = $ActivityId[$ActivityKey]
+                }
 
                 Write-Progress @ProgressParams
             }

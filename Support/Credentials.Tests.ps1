@@ -44,4 +44,5 @@ Describe 'Credential Store' {
             Assert-MockCalled New-CimSession -Exactly -Times 1
         }
     }
+    Context 'Test-Credential' {}
 }
