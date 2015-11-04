@@ -1,4 +1,31 @@
-﻿function Invoke-Queue {
+﻿workflow Get-Parallel {
+    [CmdletBinding()]
+    [OutputType([array])]
+    param(
+        [Parameter(Mandatory,ValueFromPipeline)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $ComputerName
+        ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [scriptblock]
+        $ScriptBlock
+    )
+
+    $Results = @()
+    foreach -parallel ($Target in $ComputerName) {
+        Parallel {
+            $workflow:Results += InlineScript {
+                $([scriptblock]::Create($Using:ScriptBlock)).Invoke()
+            } -PSComputerName $Target
+        }
+    }
+
+    $Results
+}
+
+function Invoke-Queue {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.Job[]])]
     param(
