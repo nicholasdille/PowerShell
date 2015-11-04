@@ -503,3 +503,562 @@ function Add-Permission {
         return $true
     }
 }
+
+function Get-DirectoryContext {
+    [CmdletBinding()]
+    [OutputType([System.DirectoryServices.ActiveDirectory.DirectoryContext])]
+    param(
+        [Parameter()]
+        [ValidateSet('Forest', 'Domain')]
+        [string]
+        $ContextType = 'Forest'
+        ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [pscredential]
+        $Credential
+    )
+
+    Process {
+        $Params = @($ContextType, $Name)
+        if ($Credential) {
+            $params += $Credential.UserName, $Credential.GetNetworkCredential().Password
+        }
+        New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext -ArgumentList @($Params)
+    }
+}
+
+function Get-Forest {
+    [CmdletBinding()]
+    [OutputType([System.DirectoryServices.ActiveDirectory.Forest])]
+    param(
+        [Parameter(ValueFromPipeline, ParameterSetName='Context')]
+        [ValidateNotNull()]
+        [System.DirectoryServices.ActiveDirectory.DirectoryContext]
+        $Context
+        ,
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName='ForestName')]
+        [ValidateNotNull()]
+        [string]
+        $Name
+        ,
+        [Parameter(ParameterSetName='ForestName')]
+        [ValidateNotNull()]
+        [pscredential]
+        $Credential
+    )
+
+    Process {
+        if ($PSCmdlet.ParameterSetName -ieq 'ForestName') {
+            $Param = @{
+                ContextType = 'Forest'
+                Name        = $Name
+            }
+            if ($Credential) {
+                $Param.Add('Credential', $Credential)
+            }
+            $Context = Get-DirectoryContext @Param
+        }
+
+        if ($Context -and $Context.ContextType -ine 'Forest') {
+            throw 'Context type must be "Forest"'
+        }
+
+        if ($Context) {
+            [System.DirectoryServices.ActiveDirectory.Forest]::GetForest($Context)
+
+        } else {
+            [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
+        }
+    }
+}
+
+function Get-Domain {
+    [CmdletBinding()]
+    [OutputType([System.DirectoryServices.ActiveDirectory.Domain])]
+    param(
+        [Parameter(ValueFromPipeline, ParameterSetName='Context')]
+        [ValidateNotNull()]
+        [System.DirectoryServices.ActiveDirectory.DirectoryContext]
+        $Context
+        ,
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName='DomainName')]
+        [ValidateNotNull()]
+        [string]
+        $Name
+        ,
+        [Parameter(ParameterSetName='DomainName')]
+        [ValidateNotNull()]
+        [pscredential]
+        $Credential
+    )
+
+    Process {
+        if ($PSCmdlet.ParameterSetName -ieq 'DomainName') {
+            $Param = @{
+                ContextType = 'Domain'
+                DomainName  = $Name
+            }
+            if ($Credential) {
+                $Param.Add('Credential', $Credential)
+            }
+            $Context = Get-DirectoryContext @Param
+        }
+
+        if ($Context -and $Context.ContextType -ine 'Domain') {
+            throw 'Context type must be "Domain"'
+        }
+
+        if ($Context) {
+            [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($Context)
+
+        } else {
+            [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
+        }
+    }
+}
+
+function Get-TrustRelationship {
+    [CmdletBinding()]
+    [OutputType([System.DirectoryServices.ActiveDirectory.TrustRelationshipInformationCollection])]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName='Forest')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $Forest
+        ,
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName='ForestName')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ForestName
+        ,
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName='Domain')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $Domain
+        ,
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName='DomainName')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $DomainName
+    )
+
+    Process {
+        if ($PSCmdlet.ParameterSetName -ieq 'Forest') {
+            $Instance = $Forest
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'Domain') {
+            $Instance = $Domain
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'ForestName') {
+            $Instance = Get-DirectoryContext -ContextType Forest -Name $ForestName | Get-Forest
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainName') {
+            $Instance = Get-DirectoryContext -ContextType Domain -Name $DomainName | Get-Domain
+        }
+        
+        $Instance.GetAllTrustRelationships()
+    }
+}
+
+function New-TrustRelationship {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [Parameter(Mandatory, ParameterSetName='ForestLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $SourceForest
+        ,
+        [Parameter(Mandatory, ParameterSetName='ForestName')]
+        [Parameter(Mandatory, ParameterSetName='ForestNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SourceForestName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $DestinationForest
+        ,
+        [Parameter(Mandatory, ParameterSetName='ForestName')]
+        [Parameter(Mandatory, ParameterSetName='ForestLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='ForestNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $DestinationForestName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [Parameter(Mandatory, ParameterSetName='DomainLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $SourceDomain
+        ,
+        [Parameter(Mandatory, ParameterSetName='DomainName')]
+        [Parameter(Mandatory, ParameterSetName='DomainNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SourceDomainName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $DestinationDomain
+        ,
+        [Parameter(Mandatory, ParameterSetName='DomainName')]
+        [Parameter(Mandatory, ParameterSetName='DomainLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='DomainNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $DestinationDomainName
+        ,
+        [Parameter()]
+        [ValidateSet('Inbound', 'Outbound', 'Bidirectional')]
+        [string]
+        $Direction = 'Bidirectional'
+        ,
+        [Parameter(Mandatory, ParameterSetName='ForestLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='ForestNameLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='DomainLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='DomainNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Password
+    )
+
+    Process {
+        if ($PSCmdlet.ParameterSetName -ieq 'ForestName') {
+            New-TrustRelationship -SourceForest (Get-Forest -Name $SourceForestName) -DestinationForest (Get-Forest -Name $DestinationForestName) -Direction $Direction
+            return
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainName') {
+            New-TrustRelationship -SourceDomain (Get-Domain -Name $SourceDomainName) -DestinationDomain (Get-Domain -Name $DestinationDomainName) -Direction $Direction
+            return
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'ForestNameLocalSide') {
+            New-TrustRelationship -SourceForest (Get-Forest -Name $SourceForestName) -DestinationForestName $DestinationForestName -Direction $Direction -Password $Password
+            return
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainNameLocalSide') {
+            New-TrustRelationship -SourceDomain (Get-Domain -Name $SourceDomainName) -DestinationDomainName $DestinationDomainName -Direction $Direction -Password $Password
+            return
+        }
+
+        if ($PSCmdlet.ParameterSetName -ieq 'Forest') {
+            $SourceInstance = $SourceForest
+            $DestinationInstance = $DestinationForest
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'Domain') {
+            $SourceInstance = $SourceDomain
+            $DestinationInstance = $DestinationDomain
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'ForestLocalSide') {
+            $SourceInstance = $SourceForest
+            $DestinationInstanceName = $DestinationForestName
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainLocalSide') {
+            $SourceInstance = $SourceDomain
+            $DestinationInstanceName = $DestinationDomainName
+        }
+
+        if ($Password) {
+            $SourceInstance.CreateLocalSideOfTrustRelationship($DestinationInstanceName, $Direction, $Password)
+
+        } else {
+            $SourceInstance.CreateTrustRelationship($DestinationInstance, $Direction)
+        }
+    }
+}
+
+function Remove-TrustRelationship {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [Parameter(Mandatory, ParameterSetName='ForestLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $SourceForest
+        ,
+        [Parameter(Mandatory, ParameterSetName='ForestName')]
+        [Parameter(Mandatory, ParameterSetName='ForestNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SourceForestName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $DestinationForest
+        ,
+        [Parameter(Mandatory, ParameterSetName='ForestName')]
+        [Parameter(Mandatory, ParameterSetName='ForestLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='ForestNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $DestinationForestName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [Parameter(Mandatory, ParameterSetName='DomainLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $SourceDomain
+        ,
+        [Parameter(Mandatory, ParameterSetName='DomainName')]
+        [Parameter(Mandatory, ParameterSetName='DomainNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SourceDomainName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $DestinationDomain
+        ,
+        [Parameter(Mandatory, ParameterSetName='DomainName')]
+        [Parameter(Mandatory, ParameterSetName='DomainLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='DomainNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $DestinationDomainName
+    )
+
+    Process {
+        if ($PSCmdlet.ParameterSetName -ieq 'ForestName') {
+            Remove-TrustRelationship -SourceForest (Get-Forest -Name $SourceForestName) -DestinationForest (Get-Forest -Name $DestinationForestName)
+            return
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainName') {
+            Remove-TrustRelationship -SourceDomain (Get-Domain -Name $SourceDomainName) -DestinationDomain (Get-Domain -Name $DestinationDomainName)
+            return
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'ForestNameLocalSide') {
+            Remove-TrustRelationship -SourceForest (Get-Forest -Name $SourceForestName) -DestinationForestName $DestinationForestName
+            return
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainNameLocalSide') {
+            Remove-TrustRelationship -SourceDomain (Get-Domain -Name $SourceDomainName) -DestinationDomainName $DestinationDomainName
+            return
+        }
+
+        if ($PSCmdlet.ParameterSetName -ieq 'Forest') {
+            $SourceInstance = $SourceForest
+            $DestinationInstance = $DestinationForest
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'Domain') {
+            $SourceInstance = $SourceDomain
+            $DestinationInstance = $DestinationDomain
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'ForestLocalSide') {
+            $SourceInstance = $SourceForest
+            $DestinationInstanceName = $DestinationForestName
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainLocalSide') {
+            $SourceInstance = $SourceDomain
+            $DestinationInstanceName = $DestinationDomainName
+        }
+
+        if (@('ForstLocalSide', 'DomainLocalSide') -icontains $PSCmdlet.ParameterSetName) {
+            $SourceInstance.DeleteLocalSideOfTrustRelationship($DestinationInstanceName, $Direction, $Password)
+
+        } elseif (@('Forest', 'Domain') -icontains $PSCmdlet.ParameterSetName) {
+            $SourceInstance.DeleteTrustRelationship($DestinationInstance)
+        }
+        
+    }
+}
+
+function Update-TrustRelationship {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [Parameter(Mandatory, ParameterSetName='ForestLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $SourceForest
+        ,
+        [Parameter(Mandatory, ParameterSetName='ForestName')]
+        [Parameter(Mandatory, ParameterSetName='ForestNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SourceForestName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $DestinationForest
+        ,
+        [Parameter(Mandatory, ParameterSetName='ForestName')]
+        [Parameter(Mandatory, ParameterSetName='ForestLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='ForestNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $DestinationForestName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [Parameter(Mandatory, ParameterSetName='DomainLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $SourceDomain
+        ,
+        [Parameter(Mandatory, ParameterSetName='DomainName')]
+        [Parameter(Mandatory, ParameterSetName='DomainNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SourceDomainName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $DestinationDomain
+        ,
+        [Parameter(Mandatory, ParameterSetName='DomainName')]
+        [Parameter(Mandatory, ParameterSetName='DomainLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='DomainNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $DestinationDomainName
+        ,
+        [Parameter()]
+        [ValidateSet('Inbound', 'Outbound', 'Bidirectional')]
+        [string]
+        $Direction = 'Bidirectional'
+        ,
+        [Parameter(Mandatory, ParameterSetName='ForestLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='ForestNameLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='DomainLocalSide')]
+        [Parameter(Mandatory, ParameterSetName='DomainNameLocalSide')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Password
+    )
+
+    Process {
+        if ($PSCmdlet.ParameterSetName -ieq 'ForestName') {
+            Update-TrustRelationship -SourceForest (Get-Forest -Name $SourceForestName) -DestinationForest (Get-Forest -Name $DestinationForestName) -Direction $Direction
+            return
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainName') {
+            Update-TrustRelationship -SourceDomain (Get-Domain -Name $SourceDomainName) -DestinationDomain (Get-Domain -Name $DestinationDomainName) -Direction $Direction
+            return
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'ForestNameLocalSide') {
+            Update-TrustRelationship -SourceForest (Get-Forest -Name $SourceForestName) -DestinationForestName $DestinationForestName -Direction $Direction -Password $Password
+            return
+
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainNameLocalSide') {
+            Update-TrustRelationship -SourceDomain (Get-Domain -Name $SourceDomainName) -DestinationDomainName $DestinationDomainName -Direction $Direction -Password $Password
+            return
+        }
+
+        if ($PSCmdlet.ParameterSetName -ieq 'Forest') {
+            $SourceInstance = $SourceForest
+            $DestinationInstance = $DestinationForest
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'Domain') {
+            $SourceInstance = $SourceDomain
+            $DestinationInstance = $DestinationDomain
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'ForestLocalSide') {
+            $SourceInstance = $SourceDomain
+            $DestinationInstanceName = $DestinationDomainName
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'DomainLocalSide') {
+            $SourceInstance = $SourceDomain
+            $DestinationInstanceName = $DestinationDomainName
+        }
+
+        if (@('ForstLocalSide', 'DomainLocalSide') -icontains $PSCmdlet.ParameterSetName) {
+            $SourceInstance.UpdateLocalSideOfTrustRelationship($DestinationInstanceName, $Direction, $Password)
+
+        } elseif (@('Forest', 'Domain') -icontains $PSCmdlet.ParameterSetName) {
+            $SourceInstance.UpdateTrustRelationship($DestinationInstance, $Direction)
+        }
+    }
+}
+
+function Assert-TrustRelationship {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $SourceForest
+        ,
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $DestinationForest
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $SourceDomain
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $DestinationDomain
+        ,
+        [Parameter(Mandatory)]
+        [ValidateSet('Inbound', 'Outbound', 'Bidirectional')]
+        [string]
+        $Direction
+    )
+
+    Process {
+        if ($PSCmdlet.ParameterSetName -ieq 'Forest') {
+            $SourceInstance = $SourceForest
+            $DestinationInstance = $DestinationForest
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'Domain') {
+            $SourceInstance = $SourceDomain
+            $DestinationInstance = $DestinationDomain
+        }
+
+        $SourceInstance.VerifyTrustRelationship($DestinationInstance, $Direction)
+    }
+}
+
+function Select-TrustRelationship {
+    [CmdletBinding()]
+    [OutputType([System.DirectoryServices.ActiveDirectory.TrustRelationshipInformation])]
+    param(
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Forest]
+        $SourceForest
+        ,
+        [Parameter(Mandatory, ParameterSetName='Forest')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $DestinationForestName
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [ValidateNotNullOrEmpty()]
+        [System.DirectoryServices.ActiveDirectory.Domain]
+        $SourceDomain
+        ,
+        [Parameter(Mandatory, ParameterSetName='Domain')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $DestinationDomainName
+    )
+
+    Process {
+        if ($PSCmdlet.ParameterSetName -ieq 'Forest') {
+            $SourceInstance = $SourceForest
+            $DestinationName = $DestinationForestName
+        
+        } elseif ($PSCmdlet.ParameterSetName -ieq 'Domain') {
+            $SourceInstance = $SourceDomain
+            $DestinationName = $DestinationDomainName
+        }
+
+        $SourceInstance.GetTrustRelationship($DestinationName)
+    }
+}
