@@ -1,4 +1,43 @@
-﻿#Requires -Modules Hyper-V, VirtualMachineManager
+﻿#Requires -Modules Hyper-V
+#, VirtualMachineManager
+
+function New-HyperVVM {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name
+        ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Path
+        ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ParentPath
+        ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $SwitchName
+    )
+
+    Process {
+        $Vhd = New-VHD -Differencing -Path $Path -ParentPath $ParentPath
+        New-VM -Name $Name -MemoryStartupBytes 2048MB -VHDPath $Vhd -SwitchName $SwitchName -Generation 2
+        Set-VM -Name $Name -ProcessorCount 2
+        
+        Enable-VMIntegrationService  -VMName $Name -Name 'Heartbeat'
+        Enable-VMIntegrationService  -VMName $Name -Name 'Key-Value Pair Exchange'
+        Enable-VMIntegrationService  -VMName $Name -Name 'Shutdown'
+        Enable-VMIntegrationService  -VMName $Name -Name 'VSS'
+        Enable-VMIntegrationService  -VMName $Name -Name 'Guest Service Interface'
+        Disable-VMIntegrationService -VMName $Name -Name 'Time Synchronization'
+    }
+}
 
 function Get-VmIdFromHyperV {
     <#
@@ -111,4 +150,26 @@ function Get-VmIp {
     )
 
     (Get-VM -ComputerName $ComputerName -Name $VmName).NetworkAdapters[0].IPAddresses | Where-Object { $_ -match $IPv4Pattern } | Select-Object -First 1
+}
+
+function Optimize-VirtualDisk {
+    Param(
+        [string]
+        $Path
+    )
+
+    Mount-VHD -Path "$Path" -ReadOnly
+    Optimize-VHD -Path "$Path" -Mode Full
+    Dismount-VHD -Path "$Path"
+}
+
+function Set-HyperVPermissions {
+    $ConfigDir = 'F:\Configuration\Virtual Machines'
+
+    Get-ChildItem -Directory $ConfigDir | foreach {
+	    $VmGuid = $_.Name
+
+	    cmd icacls "$ConfigDir\$VmGuid.xml" /grant "NT VIRTUAL MACHINE\$VmGuid":(F) /L
+	    cmd icacls F:\ /T /grant "NT VIRTUAL MACHINE\$VmGuid":(F)
+    }
 }
