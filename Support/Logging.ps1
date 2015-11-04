@@ -1,82 +1,28 @@
 ﻿. (Join-Path -Path $PSScriptRoot -ChildPath 'Utility.ps1')
 
-function Assert-Variable {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Name
-        ,
-        [Parameter()]
-        [ValidateNotNull()]
-        [scriptblock]
-        $Scriptblock
-    )
+#TODO
+#- convert log to CSV
+#- use PSCustomObject for log entry
+#- create custom object with types: [pscustomobject]@{a='1'} | select @{Name='a'; Expression={$_.a -as [int]}} | gm
+#- use Start-Job -InitializationScript {}
+#- Get-Module Hyper-V | select LogPipelineExecutionDetails
 
-    if (-Not (Get-Variable -Name Logging_LogPath -ErrorAction SilentlyContinue)) {
-        if (-Not $Scriptblock) {
-            throw ('[{0}] Variable {1} not found. Aborting.' -f $MyInvocation.MyCommand, 'Logging_LogPath')
-
-        } else {
-            $Scriptblock.Invoke()
-        }
-    }
+if (-not $LoggingPreference) {
+    # SilentlyContinue: Do not log to file
+    # Continue: Log to file
+    $LoggingPreference = 'SilentlyContinue'
 }
 
-function Start-LogSession {
-    [CmdletBinding()]
-    param(
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $Path = "$PSScriptRoot\Log-$($Env:COMPUTERNAME).txt"
-        ,
-        [Parameter()]
-        [ValidateSet('Info', 'Verbose', 'Debug')]
-        [string]
-        $Level = 'Info'
-        ,
-        [Parameter()]
-        [switch]
-        $ClearLog
-    )
-
-    Process {
-        New-Variable -Name Logging_LogPath  -Scope Global -Value $Path  -Force
-        New-Variable -Name Logging_LogLevel -Scope Global -Value $Level -Force
-
-        if ($ClearLog) {
-            Remove-Item -Path $Global:Logging_LogPath -Force
-        }
-
-        $now = Get-Date
-        $timestamp = $now.ToString('yyyy-MM-dd HH:mm:ss')
-        Write-Log '================================================================================'
-        Write-Log ('[INFO   ] Starting log session on {0} at {1} for {2}' -f $Env:COMPUTERNAME, $timestamp, $env:USERNAME)
-    }
+if (-not $LoggingLevel) {
+    # Info: Write-Host, Write-Output, Write-Error, Write-Warning
+    # Verbose: Write-Verbose
+    # Debug: Write-Debug
+    $LoggingLevel = 'Info'
 }
 
-function Stop-LogSession {
-    [CmdletBinding()]
-    param()
-
-    Process {
-        $now = Get-Date
-        Write-Log ('[INFO   ] Ending log session at {0}-{1}-{2} {3}:{4}:{5}' -f $now.Year, $now.Month, $now.Day, $now.Hour, $now.Minute, $now.Second)
-
-        Remove-Variable -Name Logging_LogPath -Scope Global
-    }
-}
-
-function Resume-LogSession {
-    [CmdletBinding()]
-    param()
-
-    Process {
-        Assert-Variable -Name Logging_LogPath
-        Assert-Variable -Name Logging_LogLevel
-    }
+if (-not $LoggingFilePath) {
+    $Timestamp = (Get-Date).ToString('yyyy-MM-dd_HH-mm-ss')
+    $LoggingFilePath = "$(Get-ScriptPath)\$($Timestamp)_$env:USERNAME@$env:COMPUTERNAME.log"
 }
 
 function Write-Log {
@@ -88,20 +34,29 @@ function Write-Log {
         $Message
         ,
         [Parameter()]
-        [ValidateNotNullOrEmpty()]
+        [ValidateSet('Information', 'Verbose', 'Debug')]
         [string]
-        $Path = $Global:Logging_LogPath
+        $Level = 'Information'
     )
 
     Begin {
-        Assert-Variable -Name Logging_LogPath -Scriptblock (Get-Item -Path Function:\Start-LogSession).ScriptBlock
-        $Caller = Get-InvocationName -InvocationInfo (Get-CallerInvocationInfo -ExcludeLogging)
+        if (-not (Test-Path -Path $LoggingFilePath)) {
+            'Timestamp;Caller;Level;Message' | Out-File -FilePath $LoggingFilePath
+        }
+        $CallerInvocationInfo = Get-CallerInvocationInfo -ExcludeLogging
+        if (-not $CallerInvocationInfo) {
+            $Caller = 'UNKNOWN'
+        } else {
+            $Caller = Get-InvocationName -InvocationInfo $CallerInvocationInfo
+        }
         $Timestamp = (Get-Date).ToString('yyyy-MM-dd_HH-mm-ss')
     }
 
     Process {
-        Foreach ($Line in $Message) {
-            ('{0} [{1}] {2}' -f $Timestamp, $Caller, $Line) | Out-File -FilePath $Global:Logging_LogPath -Append
+        if ($LoggingPreference -ieq 'Continue') {
+            Foreach ($Line in $Message) {
+                ('{0};{1};{2};{3}' -f $Timestamp, $Caller, $Level, $Line) | Out-File -FilePath $LoggingFilePath -Append
+            }
         }
     }
 }
@@ -116,7 +71,7 @@ function Write-Host {
     )
 
     Process {
-        Write-Log -Message "[INFO   ] $Message"
+        Write-Log -Message $Message
         Microsoft.Powershell.Utility\Write-Host $Message
     }
 }
@@ -131,7 +86,7 @@ function Write-Output {
     )
 
     Process {
-        Write-Log -Message "[INFO   ] $Message"
+        Write-Log -Message $Message
 
         Microsoft.Powershell.Utility\Write-Output $Message
     }
@@ -147,9 +102,9 @@ function Write-Debug {
     )
 
     Process {
-        Write-Log -Message "[DEBUG  ] $Message"
+        Write-Log -Message $Message -Level Debug
 
-        if (@('Debug') -contains $Logging_LogLevel) {
+        if (@('Debug') -contains $LoggingLevel) {
             Microsoft.Powershell.Utility\Write-Debug -Message $Message
         }
     }
@@ -165,9 +120,9 @@ function Write-Verbose {
     )
 
     Process {
-        write-Log -Message "[VERBOSE] $Message"
+        write-Log -Message $Message -Level Verbose
 
-        if (@('Verbose', 'Debug') -contains $Logging_LogLevel) {
+        if (@('Verbose', 'Debug') -contains $LoggingLevel) {
             Microsoft.Powershell.Utility\Write-Verbose -Message $Message
         }
     }
@@ -183,7 +138,7 @@ function Write-Warning {
     )
 
     Process {
-        write-Log -Message "[WARNING] $Message"
+        write-Log -Message $Message
         Microsoft.Powershell.Utility\Write-Warning -Message $Message
     }
 }
@@ -198,7 +153,7 @@ function Write-Error {
     )
 
     Process {
-        write-Log -Message "[ERROR  ] $Message"
+        write-Log -Message $Message
         Microsoft.Powershell.Utility\Write-Error -Message $Message
     }
 }
