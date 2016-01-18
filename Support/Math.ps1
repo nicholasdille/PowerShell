@@ -1,117 +1,63 @@
-﻿function Measure-Array {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-        [ValidateNotNullOrEmpty()]
-        [int[]]
-        $InputObject
-    )
-
-    BEGIN {
-        $result = @{
-            min = $null
-            max = $null
-            avg = $null
-            sum = 0
-            cnt = 0
-        }
-    }
-
-    PROCESS {
-        foreach ($item in $InputObject) {
-            $result.cnt++
-            $result.sum += $item
-
-            #Write-Host "min=$($result.min)"
-            if ($result.min -eq $null -or $item -lt $result.min) {
-                #Write-Host -Message "min before=$($result.min) after=$item"
-                $result.min = $item
-            }
-
-            #Write-Host "max=$($result.max)"
-            if ($result.max -eq $null -or $item -gt $result.max) {
-                #Write-Host -Message "max before=$($result.max) after=$item"
-                $result.max = $item
-            }
-        }
-    }
-
-    END {
-        $result.avg = $result.sum / $result.cnt
-        [PSCustomObject]$result
-    }
-}
-
-function ConvertTo-Histogram {
+﻿function New-Histogram {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
     param(
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Mandatory,ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [int[]]
         $InputObject
         ,
-        [Parameter(Mandatory=$true,ParameterSetName='BucketCount')]
-        [ValidateNotNullOrEmpty()]
-        [int]
-        $BucketCount
-        ,
-        [Parameter(Mandatory=$true,ParameterSetName='BucketSize')]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [float]
-        $BucketSize
+        $Granularity
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [float]
         $Minimum
         ,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [float]
         $Maximum
     )
 
     BEGIN {
-        $BucketLimits = @()
-        $Buckets = @()
+        $BucketCount = ($Maximum -  $Minimum + 1) / $Granularity
 
-        if ($PSCmdlet.ParameterSetName -eq 'BucketSize') {
-            $BucketCount = ($Maximum -  $Minimum) / $BucketSize
-
-        } elseif ($PSCmdlet.ParameterSetName -eq 'BucketCount') {
-            $BucketSize = ($Maximum - $Minimum) / $BucketCount
-        }
-
-        Write-Verbose -Message ('[{0}] Initilized bucket count <{1}> and bucket size <{2}>' -f $MyInvocation.MyCommand, $BucketCount, $BucketSize)
-
-        for ($BucketIndex = 0; $BucketIndex -lt $BucketCount; ++$BucketIndex) {
-            $Buckets += ,@(0)
-            
-            if ($BucketIndex -eq 0) {
-                $BucketLimits = @($Minimum)
-            } else {
-                $BucketLimits += @($BucketLimits[$BucketIndex - 1])
+        $BucketObjects = @(
+            [pscustomobject]@{Index = 0; LowerLimit = $Granularity; Count = 0}
+        )
+        for ($BucketIndex = 1; $BucketIndex -lt $BucketCount; ++$BucketIndex) {
+            $BucketObjects += ,[pscustomobject]@{
+                Index      = $BucketIndex
+                LowerLimit = $Granularity + $BucketIndex * $Granularity
+                Count      = 0
             }
-            $BucketLimits[$BucketIndex] += $BucketSize
         }
     }
 
     PROCESS {
         foreach ($item in $InputObject) {
-            $BucketIndex = 0
-            while ($item -gt $BucketLimits[$BucketIndex]) {
-                ++$BucketIndex
-            }
-            $Buckets[$BucketIndex] += 1
+            $BucketIndex = [int]($item / $Granularity) - 1
+            $BucketObjects[$BucketIndex].Count += 1
         }
     }
 
     END {
-        New-HashFromArrays -Keys $BucketLimits -Values $Buckets
+        $BucketObjects
     }
 }
 
-function Convert-HistogramToRelative {}
+function ConvertTo-RelativeHistogram {
+    [CmdletBinding()]
+    param(
+        #
+    )
+
+    #
+}
+
 function New-DistributionFromHistogram {}
 function Convert-DistributionToRelative {}
