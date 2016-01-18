@@ -1,6 +1,256 @@
 ﻿#Requires -Modules Hyper-V
 #, VirtualMachineManager
 
+function Show-IPAddress {
+    [CmdletBinding()]
+    param(
+        [Parameter(ParameterSetName='NewCimSession')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ComputerName
+        ,
+        [Parameter(ParameterSetName='NewCimSession')]
+        [ValidateNotNullOrEmpty()]
+        [pscredential]
+        $Credential
+        ,
+        [Parameter(ParameterSetName='ExistingCimSession')]
+        [ValidateNotNullOrEmpty()]
+        [Microsoft.Management.Infrastructure.CimSession]
+        $CimSession
+    )
+
+    Begin {
+        $Params = @{}
+        if ($CimSession) {
+            $Params['CimSession'] = $CimSession
+
+        } else {
+            $CimParams = @{}
+            if ($ComputerName) { $CimParams['ComputerName'] = $ComputerName }
+            if ($Credential)   { $CimParams['Credential']   = $Credential }
+            if ($CimParams.Keys) {
+                try {
+                    $Params['CimSession'] = New-CimSession @CimParams
+
+                } catch {
+                    throw ('[{0}] Unable to establish CIM connection' -f $MyInvocation.MyCommand)
+                }
+            }
+        }
+    }
+
+    Process {
+        $NetAdapter = Get-NetAdapter @Params
+        Get-NetIPAddress @Params | Where-Object {$_.AddressFamily -eq 'IPv4'} | ForEach-Object {
+            $IPAddress = $_
+            $Adapter = $NetAdapter | Where-Object {$_.InterfaceIndex -eq $IPAddress.InterfaceIndex}
+            [pscustomobject]@{
+                InterfaceIndex = $IPAddress.InterfaceIndex
+                InterfaceAlias = $IPAddress.InterfaceAlias
+                MacAddress     = $Adapter.MacAddress
+                Status         = $Adapter.Status
+                LinkSpeed      = $adapter.LinkSpeed
+                IPAddress      = $IPAddress.IPv4Address
+            }
+        }
+    }
+}
+
+function Rename-NetAdapterSet {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $NetAdapter
+        ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $NamePrefix
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [int]
+        $StartIndex = 0
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ComputerName
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [pscredential]
+        $Credential
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [Microsoft.Management.Infrastructure.CimSession]
+        $CimSession
+    )
+
+    Begin {
+        $Params = @{}
+        if ($CimSession) {
+            $Params['CimSession'] = $CimSession
+
+        } else {
+            $CimParams = @{}
+            if ($ComputerName) { $CimParams['ComputerName'] = $ComputerName }
+            if ($Credential)   { $CimParams['Credential']   = $Credential }
+            if ($CimParams.Keys) {
+                try {
+                    $Params['CimSession'] = New-CimSession @CimParams
+
+                } catch {
+                    throw ('[{0}] Unable to establish CIM connection' -f $MyInvocation.MyCommand)
+                }
+            }
+        }
+
+        $Index = $StartIndex
+        $Length = ([string]$NetAdapter.Count).Length
+    }
+
+    Process {
+        ForEach ($AdapterName in $NetAdapter) {
+            $NewName = '0' * ($Length - ([string]$Index).Length)
+            $NewName = "$NamePrefix$NewName$Index"
+            Rename-NetAdapter @Params -Name $AdapterName -NewName "$NewName"
+            ++$Index
+        }
+    }
+}
+
+function New-NetAdapterTeam {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name
+        ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $NetAdapter
+        ,
+        [Parameter()]
+        [ValidateSet('Lacp', 'Static', 'SwitchIndependent')]
+        [string]
+        $Mode = 'SwitchIndependent'
+        ,
+        [Parameter()]
+        [ValidateSet('Dynamic', 'HyperVPort', 'IPAddresses', 'MacAddresses', 'TransportPorts')]
+        [string]
+        $Algorithm = 'Dynamic'
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ComputerName
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [pscredential]
+        $Credential
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [Microsoft.Management.Infrastructure.CimSession]
+        $CimSession
+    )
+
+    Begin {
+        $Params = @{}
+        if ($CimSession) {
+            $Params['CimSession'] = $CimSession
+
+        } else {
+            $CimParams = @{}
+            if ($ComputerName) { $CimParams['ComputerName'] = $ComputerName }
+            if ($Credential)   { $CimParams['Credential']   = $Credential }
+            if ($CimParams.Keys) {
+                try {
+                    $Params['CimSession'] = New-CimSession @CimParams
+
+                } catch {
+                    throw ('[{0}] Unable to establish CIM connection' -f $MyInvocation.MyCommand)
+                }
+            }
+        }
+    }
+
+    Process {
+        New-NetLbfoTeam @Params -Name $Name -TeamMembers $NetAdapter -TeamingMode $Mode -LoadBalancingAlgorithm $Algorithm
+    }
+}
+
+function New-VirtualSwitch {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name
+        ,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $NetAdapter
+        ,
+        [Parameter()]
+        [ValidateSet('Absolute', 'Default', 'None', 'Weight')]
+        [string]
+        $QosMode = 'Weight'
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ComputerName
+        ,
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [pscredential]
+        $Credential
+    )
+
+    Begin {
+        $CimParams = @{}
+        if ($ComputerName) { $CimParams['ComputerName'] = $ComputerName }
+        if ($Credential)   { $CimParams['Credential']   = $Credential }
+        $Params = @{}
+        if ($CimParams.Keys) {
+            try {
+                $Params['CimSession'] = New-CimSession @CimParams
+
+            } catch {
+                throw ('[{0}] Unable to establish CIM connection' -f $MyInvocation.MyCommand)
+            }
+        }
+    }
+
+    Process {
+        New-VMSwitch @Params -Name $Name -NetAdapterName $NetAdapter -MinimumBandwidthMode $QosMode
+        Select ($QosMode) {
+            Weight   { Set-VMSwitch -Name $Name -DefaultFlowMinimumBandwidthWeight 50 }
+            Absolute { Set-VMSwitch -Name $Name -DefaultFlowMinimumBandwidthAbsolute 0 }
+        }
+    }
+}
+
+function New-ManagementAdapter {
+    [CmdletBinding()]
+    param()
+
+    Process {
+        Add-VMNetworkAdapter -ManagementOS -Name '' -SwitchName ''
+        Set-VMNetworkAdapter -ManagementOS -Name '' -
+    }
+}
+
 function New-HyperVVM {
     [CmdletBinding()]
     param(
