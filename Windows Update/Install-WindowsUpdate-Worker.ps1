@@ -1,3 +1,3 @@
-﻿. (Join-Path -Path $PSScriptRoot -ChildPath 'Install-WindowsUpdate.ps1')
+﻿. (Join-Path -Path $PSScriptRoot -ChildPath '..\Support\Jobs.ps1')
 
 Install-WindowsUpdate -Verbose
