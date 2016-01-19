@@ -1,11 +1,11 @@
 ﻿#Requires -Version 4
 Set-StrictMode -Version 4
 
-#TODO: Comment-based Help, Pipeline, Dirty-Flag
+#TODO: Pipeline, Dirty-Flag
 
 $Connections = @()
 
-function New-CliXmlDatabase {
+Function New-CliXmlDatabase {
     <#
         .SYNOPSIS
         Creates a new CliXml based database
@@ -16,6 +16,9 @@ function New-CliXmlDatabase {
         .PARAMETER Path
         Path to the directory
 
+        .PARAMETER Force
+        Forces the database directory to be created without confirmation
+
         .EXAMPLE
         New-CliXmlDatabase -Path .\CliXmlDatabase
 
@@ -23,7 +26,7 @@ function New-CliXmlDatabase {
         http://dille.name/blog
     #>
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Low')]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -57,7 +60,7 @@ function New-CliXmlDatabase {
     }
 }
 
-function Test-CliXmlDatabase {
+Function Test-CliXmlDatabase {
     <#
         .SYNOPSIS
         Tests whether a CliXml based database exists
@@ -68,6 +71,9 @@ function Test-CliXmlDatabase {
         .PARAMETER Path
         Path to the directory
 
+        .OUTPUTS
+        bool
+
         .EXAMPLE
         Test-CliXmlDatabase -Path .\CliXmlDatabase
 
@@ -76,7 +82,7 @@ function Test-CliXmlDatabase {
     #>
     [CmdletBinding()]
     [OutputType([bool])]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -101,7 +107,7 @@ function Test-CliXmlDatabase {
     }
 }
 
-function Assert-CliXmlDatabase {
+Function Assert-CliXmlDatabase {
     <#
         .SYNOPSIS
         Makes sure that a CliXml database exists
@@ -119,7 +125,7 @@ function Assert-CliXmlDatabase {
         http://dille.name/blog
     #>
     [CmdletBinding()]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -145,7 +151,7 @@ function Assert-CliXmlDatabase {
     }
 }
 
-function Open-CliXmlDatabase {
+Function Open-CliXmlDatabase {
     <#
         .SYNOPSIS
         Opens a CliXml based database
@@ -166,7 +172,7 @@ function Open-CliXmlDatabase {
         http://dille.name/blog
     #>
     [CmdletBinding()]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -219,25 +225,28 @@ function Open-CliXmlDatabase {
     }
 }
 
-function Save-CliXmlDatabase {
+Function Save-CliXmlDatabase {
     <#
-            .SYNOPSIS
-            Saves a CliXml based database
+        .SYNOPSIS
+        Saves a CliXml based database
 
-            .DESCRIPTION
-            All tables of the CliXml based database are written to disk
+        .DESCRIPTION
+        All tables of the CliXml based database are written to disk
 
-            .PARAMETER ConnectionName
-            Name of the database connection
+        .PARAMETER ConnectionName
+        Name of the database connection
 
-            .EXAMPLE
-            Save-CliXmlDatabase -ConnectionName Test
+        .PARAMETER Force
+        Forces a databaseto be saved to disk without confirmation
 
-            .LINK
-            http://dille.name/blog
+        .EXAMPLE
+        Save-CliXmlDatabase -ConnectionName Test
+
+        .LINK
+        http://dille.name/blog
     #>
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='High')]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -277,7 +286,7 @@ function Save-CliXmlDatabase {
     }
 }
 
-function Close-CliXmlDatabase {
+Function Close-CliXmlDatabase {
     <#
         .SYNOPSIS
         Closes the connection to a CliXml based database
@@ -301,7 +310,7 @@ function Close-CliXmlDatabase {
         http://dille.name/blog
     #>
     [CmdletBinding()]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -335,9 +344,28 @@ function Close-CliXmlDatabase {
     }
 }
 
-function Remove-CliXmlDatabase {
+Function Remove-CliXmlDatabase {
+    <#
+        .SYNOPSIS
+        Remove a CliXml based database
+
+        .DESCRIPTION
+        Removes the directory for a CliXml based database
+
+        .PARAMETER Path
+        Path to the directory
+
+        .PARAMETER Force
+        Forces removal without confirmation
+
+        .EXAMPLE
+        Remove-CliXmlDatabase -Path .\CliXmlDatabase
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='High')]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]
@@ -372,9 +400,25 @@ function Remove-CliXmlDatabase {
     }
 }
 
-function Get-CliXmlDatabaseConnection {
+Function Get-CliXmlDatabaseConnection {
+    <#
+        .SYNOPSIS
+        Retrieves the connection to a CliXml based database
+
+        .DESCRIPTION
+        Retrieves the data structure representing the connection to a CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .EXAMPLE
+        $Connection = Get-CliXmlDatabaseConnection -ConnectionName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding()]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -399,10 +443,29 @@ function Get-CliXmlDatabaseConnection {
     }
 }
 
-function Test-CliXmlDatabaseConnection {
+Function Test-CliXmlDatabaseConnection {
+    <#
+        .SYNOPSIS
+        Tests for a connection to a CliXml based database
+
+        .DESCRIPTION
+        Tests whether the data structure esenting the connection to a CliXml based database exists
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .OUTPUTS
+        bool
+
+        .EXAMPLE
+        Test-CliXmlDatabaseConnection -ConnectionName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding()]
     [OutputType([bool])]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -427,9 +490,25 @@ function Test-CliXmlDatabaseConnection {
     }
 }
 
-function Assert-CliXmlDatabaseConnection {
+Function Assert-CliXmlDatabaseConnection {
+    <#
+        .SYNOPSIS
+        Ensures that the connection to a CliXml based database exists
+
+        .DESCRIPTION
+        Throws if the data structure representing the connection to a CliXml based database does not exist
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .EXAMPLE
+        Assert-CliXmlDatabaseConnection -ConnectionName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding()]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -456,9 +535,28 @@ function Assert-CliXmlDatabaseConnection {
     }
 }
 
-function New-CliXmlDatabaseTable {
+Function New-CliXmlDatabaseTable {
+    <#
+        .SYNOPSIS
+        Creates a new table in a CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .PARAMETER Force
+        Forces the table to be created without confirmation
+
+        .EXAMPLE
+        New-CliXmlDatabaseTable -ConnectionName 'Test' -TableName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Low')]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -506,10 +604,32 @@ function New-CliXmlDatabaseTable {
     }
 }
 
-function Test-CliXmlDatabaseTable {
+Function Test-CliXmlDatabaseTable {
+    <#
+        .SYNOPSIS
+        Tests for a table in a CliXml based database
+
+        .DESCRIPTION
+        Tests whether the specified tables exists in the CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .OUTPUTS
+        bool
+
+        .EXAMPLE
+        Test-CliXmlDatabaseTable -ConnectionName 'Test' -TableName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding()]
     [OutputType([bool])]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -545,9 +665,28 @@ function Test-CliXmlDatabaseTable {
     }
 }
 
-function Assert-CliXmlDatabaseTable {
+Function Assert-CliXmlDatabaseTable {
+    <#
+        .SYNOPSIS
+        Ensures that a table exists in a CliXml based database
+
+        .DESCRIPTION
+        Throws if the specified tables does not exist in the CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .EXAMPLE
+        Assert-CliXmlDatabaseTable -ConnectionName 'Test' -TableName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding()]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -582,9 +721,22 @@ function Assert-CliXmlDatabaseTable {
     }
 }
 
-function Get-CliXmlDatabaseTable {
+Function Get-CliXmlDatabaseTable {
+    <#
+        .SYNOPSIS
+        Retrieves a table in a CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .EXAMPLE
+        $Table = Get-CliXmlDatabaseTable -ConnectionName 'Test' -TableName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding()]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -612,9 +764,31 @@ function Get-CliXmlDatabaseTable {
     }
 }
 
-function Clear-CliXmlDatabaseTable {
+Function Clear-CliXmlDatabaseTable {
+    <#
+        .SYNOPSIS
+        Clears a table in a CliXml based database
+
+        .DESCRIPTION
+        Removes all data from the specified tables in the CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .PARAMETER Force
+        Forces the table to be cleared without confirmation
+
+        .EXAMPLE
+        Clear-CliXmlDatabaseTable -ConnectionName 'Test' -TableName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -657,9 +831,28 @@ function Clear-CliXmlDatabaseTable {
     }
 }
 
-function Remove-CliXmlDatabaseTable {
+Function Remove-CliXmlDatabaseTable {
+    <#
+        .SYNOPSIS
+        Removes a table from a CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .PARAMETER Force
+        Forces the table to be removes without confirmation
+
+        .EXAMPLE
+        Remove-CliXmlDatabaseTable -ConnectionName 'Test' -TableName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Medium')]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -702,10 +895,29 @@ function Remove-CliXmlDatabaseTable {
     }
 }
 
-function Get-CliXmlDatabaseTableKey {
+Function Get-CliXmlDatabaseTableKey {
+    <#
+        .SYNOPSIS
+        Retrieves a new key for a table in a CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .OUTPUTS
+        int
+
+        .EXAMPLE
+        $Key = Get-CliXmlDatabaseTableKey -ConnectionName 'Test' -TableName 'Test'
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding()]
     [OutputType([int])]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -746,9 +958,31 @@ function Get-CliXmlDatabaseTableKey {
     }
 }
 
-function Assert-CliXmlDatabaseTableField {
+Function Assert-CliXmlDatabaseTableField {
+    <#
+        .SYNOPSIS
+        Ensures that keys match with existing data in the table in a CliXml based database
+
+        .DESCRIPTION
+        Throws if the specified keys match with existing data in the specified table in the CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .PARAMETER Key
+        Array of field names
+
+        .EXAMPLE
+        Assert-CliXmlDatabaseTable -ConnectionName 'Test' -TableName 'Test' -Key @(Name, Path)
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding()]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -800,9 +1034,34 @@ function Assert-CliXmlDatabaseTableField {
     }
 }
 
-function New-CliXmlDatabaseItem {
+Function New-CliXmlDatabaseItem {
+    <#
+        .SYNOPSIS
+        Creates a new item in a CliXml based database
+
+        .DESCRIPTION
+        Adds a new item to the specified tables in the CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .PARAMETER Data
+        Hashtable with data to be added
+
+        .PARAMETER Force
+        Forces the table to be updated without confirmation
+
+        .EXAMPLE
+        $Item = New-CliXmlDatabaseTable -ConnectionName 'Test' -TableName 'Test' -Data @{Name = 'ItemName'}
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Low')]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -863,9 +1122,31 @@ function New-CliXmlDatabaseItem {
     }
 }
 
-function Get-CliXmlDatabaseItem {
+Function Get-CliXmlDatabaseItem {
+    <#
+        .SYNOPSIS
+        Retrieves an item from a CliXml based database
+
+        .DESCRIPTION
+        Retrieves an item from the specified table in the CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .PARAMETER Id
+        ID of the item
+
+        .EXAMPLE
+        $Item = Get-CliXmlDatabaseItem -ConnectionName 'Test' -TableName 'Test' -Id 123
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding()]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -914,9 +1195,37 @@ function Get-CliXmlDatabaseItem {
     }
 }
 
-function Set-CliXmlDatabaseItem {
+Function Set-CliXmlDatabaseItem {
+    <#
+        .SYNOPSIS
+        Updates an item in a CliXml based database
+
+        .DESCRIPTION
+        Updates an item in the specified table in the CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .PARAMETER Id
+        ID of the item to be updated
+
+        .PARAMETER Data
+        Hashtable with updated data
+
+        .PARAMETER Force
+        Forces the item to be updated without confirmation
+
+        .EXAMPLE
+        Set-CliXmlDatabaseItem -ConnectionName 'Test' -TableName 'Test' -Id 123 -Data @{Name = 'UpdatedItemName'}
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Low')]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
@@ -973,9 +1282,34 @@ function Set-CliXmlDatabaseItem {
     }
 }
 
-function Remove-CliXmlDatabaseItem {
+Function Remove-CliXmlDatabaseItem {
+    <#
+        .SYNOPSIS
+        Removes an item from a CliXml based database
+
+        .DESCRIPTION
+        Removes an item from the specified table in the CliXml based database
+
+        .PARAMETER ConnectionName
+        Name of the CliXml database connection
+
+        .PARAMETER TableName
+        Name of the table
+
+        .PARAMETER Id
+        ID of the item to be removed
+
+        .PARAMETER Force
+        Forces the item to be removed without confirmation
+
+        .EXAMPLE
+        Remove-CliXmlDatabaseItem -ConnectionName 'Test' -TableName 'Test' -Id 123
+
+        .LINK
+        http://dille.name/blog
+    #>
     [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact='Low')]
-    param(
+    Param(
         [Parameter(Mandatory)]
         [Alias('Name', 'Connection')]
         [ValidateNotNullOrEmpty()]
