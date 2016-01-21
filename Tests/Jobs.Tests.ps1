@@ -1,8 +1,9 @@
-﻿#$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-#$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
+﻿$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 #. "$here\$sut"
 
-Import-Module "$PSScriptRoot\..\Support"
+#Import-Module "$PSScriptRoot\..\Support"
+. "$PSScriptRoot\..\Support\$sut"
 
 Describe 'Jobs' {
     Context 'Invoke-Queue' {
