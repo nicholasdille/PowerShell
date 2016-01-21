@@ -1,6 +1,8 @@
-﻿$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
-. "$here\$sut"
+﻿#$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+#$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
+#. "$here\$sut"
+
+Import-Module "$PSScriptRoot\..\Support"
 
 Describe 'PowerShell Object Notation' {
     Context 'ConvertFrom-Pson' {

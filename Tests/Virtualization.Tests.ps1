@@ -1,8 +1,10 @@
-﻿$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
-. "$here\$sut"
+﻿#Requires -Modules Hyper-V, VirtualMachineManager
 
-#Requires -Modules Hyper-V, VirtualMachineManager
+#$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+#$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
+#. "$here\$sut"
+
+Import-Module "$PSScriptRoot\..\Support"
 
 Describe 'Virtualization' {
     Context 'Get-VmIdFromHyperV' {
