@@ -50,6 +50,7 @@ foreach ($file in $tests ) {
 
 if ($env:APPVEYOR_JOB_ID) {
     foreach ($file in ($tests | ForEach-Object {"$($_.FullName).nunit.result.xml"})) {
+        $file
         $Address = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
         $Source = $file.FullName
 
