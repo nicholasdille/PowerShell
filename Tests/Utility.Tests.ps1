@@ -41,7 +41,7 @@ Describe 'Utility' {
         }
         It 'Works for scripts' {
             @(
-                ('. "{0}"' -f "$here/$sut")
+                ('. "{0}"' -f "$here\..\Support\$sut")
                 'Get-InvocationName -InvocationInfo $MyInvocation'
             ) | Set-Content -Path TestDrive:\Invoke-Something.ps1
             & TestDrive:\Invoke-Something.ps1 | Should Be 'Invoke-Something.ps1'
@@ -53,7 +53,7 @@ Describe 'Utility' {
         }
         It 'Works for dot sourcing' {
             @(
-                ('. "{0}"' -f "$here/$sut")
+                ('. "{0}"' -f "$here\..\Support\$sut")
                 'Get-InvocationName'
             ) | Set-Content -Path TestDrive:\Invoke-Something.ps1
             $Path = Get-Item -Path TestDrive:\Invoke-Something.ps1 | Select-Object -ExpandProperty FullName

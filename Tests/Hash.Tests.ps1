@@ -62,7 +62,7 @@ Describe 'Hash Tables' {
         It 'Fails on mangled input' {
             Mock Write-Error {}
             ConvertFrom-KeyValueString -InputObject 'A=1','B2' -ErrorAction Continue
-            Assert-MockCalled Write-Error -Exactly -Times 1
+            Assert-MockCalled Write-Error -Scope It -Exactly -Times 1
         }
     }
 }

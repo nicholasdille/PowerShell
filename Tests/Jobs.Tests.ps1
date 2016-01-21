@@ -40,45 +40,45 @@ Describe 'Jobs' {
         It 'Works with a parameter' {
             Mock Write-Progress {}
             $output = ConvertTo-Progress -ProgressText 'blarg'
-            Assert-MockCalled Write-Progress -Exactly -Times 0
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 0
             $output | Should Be 'blarg'
         }
         It 'Works on the pipeline' {
             Mock Write-Progress {}
             $output = 'blarg' | ConvertTo-Progress
-            Assert-MockCalled Write-Progress -Exactly -Times 0
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 0
             $output | Should Be 'blarg'
         }
         It 'Writes progress on proper input' {
             Mock Write-Progress {}
             'Activity="Activity Text" Status="Status Text" Percentage=10' | ConvertTo-Progress | Out-Null
-            Assert-MockCalled Write-Progress -Times 1
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1
         }
         It 'Correctly separates progress and output' {
             Mock Write-Progress {}
             $output = 'blarg','Activity="Activity Text" Status="Status Text" Percentage=10' | ConvertTo-Progress
-            Assert-MockCalled Write-Progress -Times 1
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1
             $output | Should Be 'blarg'
         }
         It 'Outputs the expected progress' {
             Mock Write-Progress {} -ParameterFilter {$Activity -ieq 'Activity Text' -and $Status -ieq 'Status Text' -and $PercentageComplete -eq 10}
             'Activity="Activity Text" Status="Status Text" Percentage=10' | ConvertTo-Progress | Out-Null
-            Assert-MockCalled Write-Progress -Times 1
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1
         }
         It 'Correctly fills all progress fields' {
             Mock Write-Progress {} -ParameterFilter {$Id -eq 1 -and $ParentId -eq 1248 -and $Activity -ieq 'Activity Text' -and $Status -ieq 'Status Text' -and $Operation -ieq 'Operation Text' -and $PercentageComplete -eq 10}
             'Id=1 ParentId=1248 Activity="Activity Text" Status="Status Text" Operation="Operation Text" Percentage=10' | ConvertTo-Progress | Out-Null
-            Assert-MockCalled Write-Progress -Times 1
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1
         }
         It 'Presets job and parent ID' {
             Mock Write-Progress {} -ParameterFilter {$Id -eq 1 -and $ParentId -eq 1248}
             'Activity="Activity Text" Status="Status Text" Percentage=10' | ConvertTo-Progress | Out-Null
-            Assert-MockCalled Write-Progress -Times 1
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1
         }
         It 'Preset IDs are overridden' {
             Mock Write-Progress {} -ParameterFilter {$Id -eq 1 -and $ParentId -eq 1248}
             'Activity="Id=2 ParentId=1249 Activity Text" Status="Status Text" Percentage=10' | ConvertTo-Progress | Out-Null
-            Assert-MockCalled Write-Progress -Times 1
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1
         }
     }
     Context 'Show-JobProgress' {
@@ -86,13 +86,13 @@ Describe 'Jobs' {
             Mock Write-Progress {}
             $Job = Start-Job -ScriptBlock {Write-Progress -Activity 'Activity Text' -Status 'Status Text' -PercentComplete 10} | Wait-Job
             $Job | Show-JobProgress
-            Assert-MockCalled Write-Progress -Exactly -Times 1
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1
         }
         It 'Fills the progress fields correctly' {
             Mock Write-Progress {} -ParameterFilter {$Id -eq 0 -and $ParentId -eq 1248 -and $Activity -ieq 'Activity Text' -and $Status -ieq 'Status Text' -and $Operation -ieq 'Operation Text' -and $PercentageComplete -eq 10}
             $Job = Start-Job -ScriptBlock {Write-Progress -Id 0 -ParentId 1248 -Activity 'Activity Text' -Status 'Status Text' -Operation 'Operation Text' -PercentComplete 10} | Wait-Job
             $Job | Show-JobProgress
-            Assert-MockCalled Write-Progress -Exactly -Times 1
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1
         }
         It 'Displays multiple progress message for different IDs' {
             Mock Write-Progress {}
@@ -101,7 +101,7 @@ Describe 'Jobs' {
                 Write-Progress -Id 1 -Activity 'Activity Text 2' -Status 'Status Text' -PercentComplete 11
             } | Wait-Job
             $Job | Show-JobProgress
-            Assert-MockCalled Write-Progress -Exactly -Times 3
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 2
         }
         It 'Displays only the filtered progress messages' {
             Mock Write-Progress {} -ParameterFilter {$Id -eq 10}
@@ -111,8 +111,8 @@ Describe 'Jobs' {
                 Write-Progress -Id 11 -Activity 'Activity Text 2' -Status 'Status Text' -PercentComplete 11
             } | Wait-Job
             $Job | Show-JobProgress -FilterScript {$Activity -like '*2'}
-            Assert-MockCalled Write-Progress -Exactly -Times 1 -ParameterFilter {$Id -eq 11}
-            Assert-MockCalled Write-Progress -Exactly -Times 0 -ParameterFilter {$Id -eq 10}
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1 -ParameterFilter {$Id -eq 11}
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1 -ParameterFilter {$Id -eq 10}
         }
         It 'Adds parent ID to progress messages' {
             Mock Write-Progress {} -ParameterFilter {$ParentId -eq 1248}
@@ -120,7 +120,7 @@ Describe 'Jobs' {
                 Write-Progress -Activity 'Activity Text 1' -Status 'Status Text' -PercentComplete 10
             } | Wait-Job
             $Job | Show-JobProgress -ParentId 1248
-            Assert-MockCalled Write-Progress -Exactly -Times 1 -ParameterFilter {$ParentId -eq 1248}
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1 -ParameterFilter {$ParentId -eq 1248}
         }
         It 'Automatically sets unique IDs on progress messages' {
             Mock Write-Progress {} -ParameterFilter {$Id -eq 0}
@@ -130,8 +130,8 @@ Describe 'Jobs' {
                 Write-Progress -Activity 'Activity Text 2' -Status 'Status Text' -PercentComplete 11
             } | Wait-Job
             $Job | Show-JobProgress -GenerateUniqueId
-            Assert-MockCalled Write-Progress -Exactly -Times 1 -ParameterFilter {$Id -eq 0}
-            Assert-MockCalled Write-Progress -Exactly -Times 1 -ParameterFilter {$Id -eq 1}
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1 -ParameterFilter {$Id -eq 0}
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1 -ParameterFilter {$Id -eq 1}
         }
         It 'Autogenerated unique IDs with specified offset' {
             Mock Write-Progress {} -ParameterFilter {$Id -eq 16}
@@ -139,7 +139,7 @@ Describe 'Jobs' {
                 Write-Progress -Activity 'Activity Text 1' -Status 'Status Text' -PercentComplete 10
             } | Wait-Job
             $Job | Show-JobProgress -GenerateUniqueId -UniqueIdOffset 15
-            Assert-MockCalled Write-Progress -Exactly -Times 1 -ParameterFilter {$Id -eq 16}
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1 -ParameterFilter {$Id -eq 16}
         }
         It 'Autogenerated unique IDs with offset based on parent ID' {
             Mock Write-Progress {} -ParameterFilter {$Id -eq 21}
@@ -147,7 +147,7 @@ Describe 'Jobs' {
                 Write-Progress -Activity 'Activity Text 1' -Status 'Status Text' -PercentComplete 10
             } | Wait-Job
             $Job | Show-JobProgress -GenerateUniqueId -ParentId 20
-            Assert-MockCalled Write-Progress -Exactly -Times 1 -ParameterFilter {$Id -eq 21}
+            Assert-MockCalled Write-Progress -Scope It -Exactly -Times 1 -ParameterFilter {$Id -eq 21}
         }
     }
 }

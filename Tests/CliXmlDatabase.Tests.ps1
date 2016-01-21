@@ -51,7 +51,7 @@ Describe 'Unit tests for CliXml based database' {
                 $Connection.Keys -icontains 'Data' | Should Be $true
                 $Connection.Name | Should Be 'Pester'
                 $Connection.Path | Should Be TestDrive:\Test
-                Close-CliXmlDatabase -ConnectionName 'Pester'
+                Close-CliXmlDatabase -ConnectionName 'Pester' -Verbose
             }
             It 'Throws if a connection name is already in use' {
                 Open-CliXmlDatabase -ConnectionName 'Pester' -Path TestDrive:\Test
