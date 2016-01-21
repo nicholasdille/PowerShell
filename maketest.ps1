@@ -7,6 +7,8 @@ If ($MyInvocation.MyCommand.Path) {
 
 $tests = Get-ChildItem -Path (Join-Path -Path $here -ChildPath 'tests/*.tests.ps1')
 
+$ConfirmPreference = 'None'
+
 foreach ($file in $tests ) {
     $nunitxml = $file.fullname + '.nunit.result.xml'
     $clixml = $file.fullname + '.clixml.result.xml'
