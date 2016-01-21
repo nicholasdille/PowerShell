@@ -1,5 +1,5 @@
-﻿Import-Module -Name "$PSScriptRoot\..\CliXmlDatabase\CliXmlDatabase.psm1" -Force
-Import-Module -Name "$PSScriptRoot\VideoDatabase.psm1" -Force
+﻿Import-Module -Name "$PSScriptRoot\..\CliXmlDatabase" -Force
+Import-Module -Name "$PSScriptRoot\..\VideoDatabase" -Force
 
 $ConfirmPreference = 'None'
 
