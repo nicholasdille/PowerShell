@@ -1,7 +1,7 @@
 ﻿#Requires -Version 4
 Set-StrictMode -Version 4
 
-#TODO: Pipeline, Dirty-Flag
+#TODO: Pipeline, Dirty-Flag, Updatable help, Custom Type
 
 $Connections = @()
 
@@ -268,6 +268,8 @@ Function Save-CliXmlDatabase {
         if (-not $PSBoundParameters.ContainsKey('WhatIf')) {
             $WhatIfPreference = $PSCmdlet.SessionState.PSVariable.GetValue('WhatIfPreference')
         }
+
+        Write-Verbose ('[{0}] Using ConfirmPreference={1}' -f $MyInvocation.MyCommand, $ConfirmPreference)
     }
 
     Process {
