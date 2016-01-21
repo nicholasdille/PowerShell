@@ -1,7 +1,10 @@
 ﻿#Requires -Version 4
 Set-StrictMode -Version 4
 
-Invoke-ScriptAnalyzer -Path "$PSScriptRoot\CliXmlDatabase.psm1" -ExcludeRule PSProvideDefaultParameterValue
+if (-not (Get-Module -Name PSScriptAnalyzer -ErrorAction SilentlyContinue)) {
+    Invoke-ScriptAnalyzer -Path "$PSScriptRoot\CliXmlDatabase.psm1" -ExcludeRule PSProvideDefaultParameterValue
+}
+
 Import-Module -Name "$PSScriptRoot\CliXmlDatabase.psm1" -Force
 
 $ConfirmPreference = 'None'

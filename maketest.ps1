@@ -42,14 +42,14 @@ $tests = @(
 $ConfirmPreference = 'None'
 
 foreach ($file in $tests ) {
-    $nunitxml = $file.fullname + ".nunit.result.xml"
-    $clixml = $file.fullname + ".clixml.result.xml"
+    $nunitxml = $file.fullname + '.nunit.result.xml'
+    $clixml = $file.fullname + '.clixml.result.xml'
     #powershell.exe -noprofile -c "invoke-pester -path $($file.fullname) -outputFormat NUnitXml -OutputFile $nunitxml -passthru |export-clixml -path $clixml"
     invoke-pester -path $($file.fullname) -outputFormat NUnitXml -OutputFile $nunitxml -passthru |export-clixml -path $clixml
 }
 
 if ($env:APPVEYOR_JOB_ID) {
-    foreach ($file in (ls (join-path $here "tests/*.nunit.result.xml"))) {
+    foreach ($file in ($tests | ForEach-Object {"$($_.FullName).nunit.result.xml"})) {
         $Address = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
         $Source = $file.FullName
 
@@ -59,7 +59,7 @@ if ($env:APPVEYOR_JOB_ID) {
     }
 }
 else {
-    "Skipping Appveyor upload because this job is not running in Appveyor"
+    'Skipping Appveyor upload because this job is not running in Appveyor'
 }
 
 #What failed?
